@@ -4,6 +4,7 @@
     <string name="app_name">Lab4-dog-breed</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="image_description">Selected dog breed</string>
     <string-array name="dogs">
         <item >Border Terrier</item>
         <item >Alaskan Malamute</item>
@@ -14,15 +15,5 @@
 		<item >Greyhound</item>
 		<item >Dachshund</item>
     </string-array>
-    <integer-array name="dogImageIds">
-        <item >@drawable/border_terrier</item>
-        <item >@drawable/alaskan_malamute</item>
-        <item >@drawable/finnish_spitz</item>
-        <item >@drawable/portuguese_water_dog</item>
-        <item >@drawable/rottweiler</item>
-        <item >@drawable/beagle</item>
-        <item >@drawable/greyhound</item>
-        <item >@drawable/dachshund</item>
-    </integer-array>
 
 </resources>
