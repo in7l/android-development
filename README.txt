@@ -1,0 +1,1 @@
+This is a repository created as part of the Android applications development course.
