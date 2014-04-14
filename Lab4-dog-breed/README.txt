@@ -1,0 +1,1 @@
+Modify Dog Breed application in way that it displays also an image of selected dog breed.
