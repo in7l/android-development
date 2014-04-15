@@ -12,6 +12,7 @@ import android.widget.TextView;
 public class MainActivity extends Activity implements AlertListener {
 	private TextView dialogTextView;
 	private String message;
+	private boolean pris;
 	
 	private OnClickListener buttonOnClickListener = new OnClickListener() {
 		@Override
@@ -19,6 +20,12 @@ public class MainActivity extends Activity implements AlertListener {
 			Button button = (Button)v;
 			// Store the text of the clicked button.
 			message = button.getText().toString();
+			
+			if (message.equalsIgnoreCase("Send to prison")) {
+				pris = true;
+			} else {
+				pris = false;
+			}
 			
 			DialogFragment alertFragment = new AlertFragment();
 			alertFragment.show(getFragmentManager(), "AlertDialogFragment");
@@ -51,27 +58,19 @@ public class MainActivity extends Activity implements AlertListener {
 
 	@Override
 	public void onPosClick() {
-		if (message.equalsIgnoreCase("Send to prison")) {
+		if (pris) {
 			dialogTextView.setText("Joe was sent to prison");
-		}
-		else if (message.equalsIgnoreCase("Release")) {
+		} else {
 			dialogTextView.setText("Joe was released from prison");
-		}
-		else {
-			dialogTextView.setText(R.string.user_title);
 		}
 	}
 
 	@Override
 	public void onCancelClick() {
-		if (message.equalsIgnoreCase("Send to prison")) {
+		if (pris) {
 			dialogTextView.setText("Joe was not sent to prison");
-		}
-		else if (message.equalsIgnoreCase("Release")) {
+		} else {
 			dialogTextView.setText("Joe was not released from prison");
-		}
-		else {
-			dialogTextView.setText(R.string.user_title);
 		}
 	}
 
