@@ -8,5 +8,7 @@
     <string name="user_title">Leader of the Gang</string>
     <string name="imprison">Send to prison</string>
     <string name="release">Release</string>
+    <string name="alok">Alert OK</string>
+    <string name="alcancel">Alert Cancel</string>
 
 </resources>
