@@ -3,14 +3,11 @@ package com.example.lab6_alert_dialog;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.DialogFragment;
-import android.content.Context;
 import android.view.Menu;
-import android.view.TextureView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class MainActivity extends Activity implements AlertListener {
 	private TextView dialogTextView;
