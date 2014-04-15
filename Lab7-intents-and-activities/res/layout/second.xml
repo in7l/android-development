@@ -4,15 +4,20 @@
     android:layout_height="match_parent">
     
     <TextView
-        android:id="@+id/tv1"
+        android:id="@+id/tv2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/what_to_do"/>
+        android:text="@string/make_a_decision"/>
     
     <Button
-        android:id="@+id/AskDecisionButton"
+        android:id="@+id/ImprisonButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/ask_decision"/>
+        android:text="@string/send_to_prison"/>
     
+    <Button
+        android:id="@+id/ReleaseButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/release_from_prison"/>
 </LinearLayout>
