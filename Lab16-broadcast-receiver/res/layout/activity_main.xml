@@ -10,7 +10,8 @@
         <TextView
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/health" />
+	        android:text="@string/health"
+	        android:paddingRight="3dip" />
 	     <TextView
 	         android:id="@+id/health"
 	         android:layout_width="wrap_content"
@@ -24,7 +25,8 @@
         <TextView
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/level" />
+	        android:text="@string/level"
+	        android:paddingRight="3dip" />
 	     <TextView
 	         android:id="@+id/level"
 	         android:layout_width="wrap_content"
@@ -37,7 +39,8 @@
         <TextView
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/status" />
+	        android:text="@string/status"
+	        android:paddingRight="3dip" />
 	     <TextView
 	         android:id="@+id/status"
 	         android:layout_width="wrap_content"
@@ -50,7 +53,8 @@
         <TextView
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/plugged" />
+	        android:text="@string/plugged"
+	        android:paddingRight="3dip" />
 	     <TextView
 	         android:id="@+id/plugged"
 	         android:layout_width="wrap_content"
@@ -63,7 +67,8 @@
         <TextView
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/technology" />
+	        android:text="@string/technology"
+	        android:paddingRight="3dip" />
 	     <TextView
 	         android:id="@+id/technology"
 	         android:layout_width="wrap_content"
@@ -76,7 +81,8 @@
         <TextView
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/temperature" />
+	        android:text="@string/temperature"
+	        android:paddingRight="3dip" />
 	     <TextView
 	         android:id="@+id/temperature"
 	         android:layout_width="wrap_content"
@@ -89,12 +95,27 @@
         <TextView
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="@string/voltage" />
+	        android:text="@string/voltage"
+	        android:paddingRight="3dip" />
 	     <TextView
 	         android:id="@+id/voltage"
 	         android:layout_width="wrap_content"
 	         android:layout_height="wrap_content"/>
     </LinearLayout>
         
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="@string/last_updated"
+	        android:paddingRight="3dip" />
+	     <TextView
+	         android:id="@+id/last_updated"
+	         android:layout_width="wrap_content"
+	         android:layout_height="wrap_content"/>
+    </LinearLayout>
 	    
 </LinearLayout>
