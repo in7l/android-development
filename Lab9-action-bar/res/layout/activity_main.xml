@@ -7,35 +7,8 @@
         android:id="@+id/TextViewUserName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/user_name"
+        android:text="@string/question"
         android:background="@color/red_background" />
-    
-     <TextView
-        android:id="@+id/TextViewUserTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/user_title" />
-     
-     <LinearLayout 
-         
-         android:orientation="horizontal"
-         android:layout_width="match_parent"
-         android:layout_height="wrap_content">
-         
-         <Button
-             android:id="@+id/ButtonImprison"
-             android:text="@string/imprison"
-             android:layout_width="0dp"
-             android:layout_height="wrap_content"
-             android:layout_weight="1" />
-         
-         <Button
-             android:id="@+id/ButtonRelease"
-             android:text="@string/release"
-             android:layout_width="0dp"
-             android:layout_height="wrap_content"
-             android:layout_weight="1" />
-         
-     </LinearLayout>
+   
     
 </LinearLayout>
