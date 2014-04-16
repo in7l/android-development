@@ -1,0 +1,2 @@
+- Get info about Battery and display it properly.
+- Remember to unregister your broadcast receiver
