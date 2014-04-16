@@ -4,5 +4,12 @@
     <string name="app_name">Lab16-broadcast-receiver</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="health">Health:</string>
+    <string name="level">Level:</string>
+    <string name="status">Status:</string>
+    <string name="plugged">Plugged:</string>
+    <string name="technology">Technology:</string>
+    <string name="voltage">Voltage:</string>
+    <string name="temperature">Temperature:</string>
 
 </resources>
