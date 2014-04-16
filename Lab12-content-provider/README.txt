@@ -1,0 +1,2 @@
+-Create some contacts with names, phone numbers and email addresses (using Emulator’s Contacts application on home screen)
+- Create Activity that will use Contacts Content Provider and display all the names and emails in Contacts
