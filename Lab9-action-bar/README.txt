@@ -1,0 +1,2 @@
+Modify once again ”Joe Dalton” application – Lab 5.
+Stick to one activity where we make a selection (send to prison / release) using Action Bar. Depending on the selection we will display respective Toast.
