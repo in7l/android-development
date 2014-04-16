@@ -1,0 +1,2 @@
+Modify once again ”Joe Dalton” application – Lab10
+-Instead of Preferences use one text file, i.e. save counters in a text file. When user selects one of two menu options, display current counter value in Toast.

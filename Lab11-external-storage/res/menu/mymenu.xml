@@ -1,0 +1,10 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/ImprisonItem"
+        android:icon="@drawable/imprison"
+        android:title="@string/imprison_item"
+        android:showAsAction="ifRoom|withText"/>
+    <item android:id="@+id/ReleaseItem"
+        android:icon="@drawable/release"
+        android:title="@string/release_item"
+        android:showAsAction="ifRoom|withText"/>
+</menu>
