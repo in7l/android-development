@@ -1,6 +1,17 @@
 package com.example.lab11_external_storage;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.os.Bundle;
+import android.os.Environment;
 import android.R.anim;
 import android.app.ActionBar;
 import android.app.Activity;
@@ -15,11 +26,12 @@ import android.widget.Button;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-	private static final String PREF = "JailHistory";
-	private static final String RELEASED_TIMES_KEY = "released_count";
-	private static final String IMPRISONED_TIMES_KEY = "imprisoned_count";
+	private final static String JSON_FNAME = "jsonCounter";
+	private final static String RELEASED_PROPERTY = "releasedCount";
+	private final static String IMPRISONED_PROPERTY = "imprisonedCount";
+	private JSONObject jsonCounter = null;
+	private String jsonString = null;
 	private Toast toast;
-	SharedPreferences pref;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +47,12 @@ public class MainActivity extends Activity {
 		ActionBar bar = getActionBar();
 		bar.setHomeButtonEnabled(true);
 		
-		// Get the shared preferences object.
-		pref = getSharedPreferences(PREF, Activity.MODE_PRIVATE);
+		// Read the jsonCounter.
+		try {
+			loadJson();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     }
 
 
@@ -51,43 +67,55 @@ public class MainActivity extends Activity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		String toastMessage = null;
-		Editor prefEditor = null;
+		
 		switch (item.getItemId()) {
 			case R.id.ReleaseItem:
-				// Get how many times the person has been released from jail.
-				int released_count = pref.getInt(RELEASED_TIMES_KEY, 0);
-				// Increment by 1.
-				released_count++;
-				// Store the new count.
-				prefEditor = pref.edit();
-				prefEditor.putInt(RELEASED_TIMES_KEY, released_count);
-				// Store the preference.
-				prefEditor.commit();
-				// Display a toast message with the current value.
-				toastMessage = getString(R.string.release) + " "
-						+ released_count + " times";
+				try {
+					// Get how many times the person has been released from jail.
+					int released_count = jsonCounter.getInt(RELEASED_PROPERTY);
+					// Increment by 1.
+					released_count++;
+					
+					// Store the new count.
+					jsonCounter.put(RELEASED_PROPERTY, released_count);
+					saveJson();
+					// Display a toast message with the current value.
+					toastMessage = getString(R.string.release) + " "
+							+ released_count + " times";
+				} catch (Exception e1) {
+					toastMessage = "Failed to update property " + RELEASED_PROPERTY;
+				}
+				
+				
 				break;
 			case R.id.ImprisonItem:
-				// Get how many times the person has been put to jail.
-				int imprisoned_count = pref.getInt(IMPRISONED_TIMES_KEY, 0);
-				// Increment by 1.
-				imprisoned_count++;
-				// Store the new count.
-				prefEditor = pref.edit();
-				prefEditor.putInt(IMPRISONED_TIMES_KEY, imprisoned_count);
-				// Store the preference.
-				prefEditor.commit();
-				// Display a toast message with the current value.
-				toastMessage = getString(R.string.imprison) + " "
-						+ imprisoned_count + " times";
+				try {
+					// Get how many times the person has been put to jail.
+					int imprisoned_count = jsonCounter.getInt(IMPRISONED_PROPERTY);
+					// Increment by 1.
+					imprisoned_count++;
+
+					// Store the new count.
+					jsonCounter.put(IMPRISONED_PROPERTY, imprisoned_count);
+					saveJson();
+					// Display a toast message with the current value.
+					toastMessage = getString(R.string.imprison) + " "
+							+ imprisoned_count + " times";
+				} catch (Exception e) {
+					toastMessage = "Failed to update property " + IMPRISONED_PROPERTY;
+				}
 				
 				break;
 			case android.R.id.home:
-				prefEditor = pref.edit();
-				prefEditor.putInt(RELEASED_TIMES_KEY, 0);
-				prefEditor.putInt(IMPRISONED_TIMES_KEY, 0);
-				prefEditor.commit();
-				toastMessage = "Criminal history cleared";
+				try {
+					jsonCounter.put(RELEASED_PROPERTY, 0);
+					jsonCounter.put(IMPRISONED_PROPERTY, 0);
+					saveJson();
+					toastMessage = "Criminal history cleared";
+				}
+				catch (Exception e) {
+					toastMessage = "Failed to reset properties.";
+				}
 		}
 		
 		if (toastMessage != null) {
@@ -98,5 +126,38 @@ public class MainActivity extends Activity {
 		return true;
 	}
     
+	
+	private void loadJson() throws IOException, JSONException {
+		String state = Environment.getExternalStorageState();
+		if (state.equals(Environment.MEDIA_MOUNTED)) {
+			File file = new File(getExternalFilesDir(null), JSON_FNAME);
+			BufferedReader buf = new BufferedReader(new FileReader(file));
+			int content;
+			char ch;
+			StringBuilder fileContent = new StringBuilder(50);
+			
+			while ((content = buf.read()) != -1) {
+				fileContent.append((char)content);
+			}
+			
+			buf.close();
+			
+			jsonString = fileContent.toString();
+			jsonCounter = new JSONObject(jsonString);
+		}
+	}
+	
+	private void saveJson() throws IOException {
+		jsonString = jsonCounter.toString();
+		
+		String state = Environment.getExternalStorageState();
+		if (state.equals(Environment.MEDIA_MOUNTED)) {
+			File file = new File(getExternalFilesDir(null), JSON_FNAME);
+			FileWriter fWriter = new FileWriter(file);
+			BufferedWriter bufW = new BufferedWriter(fWriter);
+			bufW.write(jsonString);
+			bufW.close();
+		}
+	}
     
 }
