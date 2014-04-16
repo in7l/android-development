@@ -3,6 +3,7 @@ package com.example.lab11_external_storage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,11 +27,11 @@ import android.widget.Button;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-	private final static String JSON_FNAME = "jsonCounter";
+	private final static String JSON_FNAME = "jsonCounter.txt";
 	private final static String RELEASED_PROPERTY = "releasedCount";
 	private final static String IMPRISONED_PROPERTY = "imprisonedCount";
 	private JSONObject jsonCounter = null;
-	private String jsonString = null;
+	private String jsonString;
 	private Toast toast;
 
     @Override
@@ -46,6 +47,11 @@ public class MainActivity extends Activity {
 		// Enable home button.
 		ActionBar bar = getActionBar();
 		bar.setHomeButtonEnabled(true);
+		
+		// Initialize the jsonString in case the file does not exist yet.
+		jsonString = "{"
+				+ "\"" + RELEASED_PROPERTY + "\": 0,"
+				+ "\"" + IMPRISONED_PROPERTY + "\": 0 }";
 		
 		// Read the jsonCounter.
 		try {
@@ -131,19 +137,28 @@ public class MainActivity extends Activity {
 		String state = Environment.getExternalStorageState();
 		if (state.equals(Environment.MEDIA_MOUNTED)) {
 			File file = new File(getExternalFilesDir(null), JSON_FNAME);
-			BufferedReader buf = new BufferedReader(new FileReader(file));
-			int content;
-			char ch;
-			StringBuilder fileContent = new StringBuilder(50);
-			
-			while ((content = buf.read()) != -1) {
-				fileContent.append((char)content);
+			BufferedReader buf = null;
+			try {
+				buf = new BufferedReader(new FileReader(file));
+				int content;
+				char ch;
+				StringBuilder fileContent = new StringBuilder(50);
+				
+				while ((content = buf.read()) != -1) {
+					fileContent.append((char)content);
+				}
+
+				jsonString = fileContent.toString();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				return;
 			}
-			
-			buf.close();
-			
-			jsonString = fileContent.toString();
-			jsonCounter = new JSONObject(jsonString);
+			finally {
+				if (buf != null) {
+					buf.close();
+				}
+				jsonCounter = new JSONObject(jsonString);
+			}
 		}
 	}
 	
