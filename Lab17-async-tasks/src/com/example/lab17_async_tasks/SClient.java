@@ -2,6 +2,7 @@ package com.example.lab17_async_tasks;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -23,7 +24,7 @@ public class SClient extends AsyncTask<URL, Void, String> {
 		String sourceString = "Loading source file failed.";
 		try {
 			URL url = params[0];
-			URLConnection conn = url.openConnection();
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 			
 			StringBuilder siteSource = new StringBuilder();
@@ -31,6 +32,8 @@ public class SClient extends AsyncTask<URL, Void, String> {
 			while ((ch = br.read()) != -1) {
 				siteSource.append((char)ch);
 			}
+			br.close();
+			conn.disconnect();
 			
 			sourceString = siteSource.toString();
 		} catch (Exception e) {
