@@ -2,6 +2,7 @@ package com.example.lab15_services_and_notifications;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -21,7 +22,7 @@ public class AuthorityClient implements Runnable {
 	@Override
 	public void run() {
 		try {
-			URLConnection conn = url.openConnection();
+			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 			
 			StringBuilder siteResponse = new StringBuilder();
@@ -29,6 +30,8 @@ public class AuthorityClient implements Runnable {
 			while ((ch = br.read()) != -1) {
 				siteResponse.append((char)ch);
 			}
+			br.close();
+			conn.disconnect();
 			
 			// Obtain a message from the service handler and send a response.
 			Message msg = sHandler.obtainMessage();

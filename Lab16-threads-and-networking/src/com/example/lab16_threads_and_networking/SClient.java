@@ -2,6 +2,7 @@ package com.example.lab16_threads_and_networking;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -21,7 +22,7 @@ public class SClient implements Runnable {
 	public void run() {
 		try {
 			URL url = new URL("http://www.google.com");
-			URLConnection conn = url.openConnection();
+			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 			
 			StringBuilder siteSource = new StringBuilder();
@@ -29,6 +30,8 @@ public class SClient implements Runnable {
 			while ((ch = br.read()) != -1) {
 				siteSource.append((char)ch);
 			}
+			br.close();
+			conn.disconnect();
 			
 			// Obtain a message from the ui handler and send a respone.
 			Message msg = ui.obtainMessage();
