@@ -2,12 +2,29 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
-
-    <Button
+    
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        
+        <Button
         android:id="@+id/GetSourceButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/get_google" />
+        android:text="@string/get_google"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/ClearSourceButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/clear_source"
+        android:textSize="16sp" />
+        
+    </LinearLayout>
+
+    
     
     <ScrollView 
         android:layout_width="match_parent"

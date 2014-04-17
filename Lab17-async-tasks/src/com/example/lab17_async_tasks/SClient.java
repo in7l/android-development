@@ -5,22 +5,24 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-public class SClient implements Runnable {
-	private Handler ui;
+public class SClient extends AsyncTask<URL, Void, String> {
+	private SClientListener uiListener;
 	
-	public SClient(Handler handler) {
-		// Store handler to UI thread.
-		ui = handler;
+	public SClient(SClientListener listener) {
+		// Store a reference to the activity (listener).
+		uiListener = listener;
 	}
 
 	@Override
-	public void run() {
+	protected String doInBackground(URL... params) {
+		String sourceString = "Loading source file failed.";
 		try {
-			URL url = new URL("http://www.google.com");
+			URL url = params[0];
 			URLConnection conn = url.openConnection();
 			BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 			
@@ -30,14 +32,19 @@ public class SClient implements Runnable {
 				siteSource.append((char)ch);
 			}
 			
-			// Obtain a message from the ui handler and send a respone.
-			Message msg = ui.obtainMessage();
-			msg.what = 0;
-			msg.obj = siteSource.toString();
-			ui.sendMessage(msg);
+			sourceString = siteSource.toString();
 		} catch (Exception e) {
 			Log.e("TCP", "C: Error", e);
 		}
+		
+		return sourceString;
 	}
 
+	@Override
+	protected void onPostExecute(String result) {
+		// Update the source code text.
+		uiListener.setSourceCodeText(result);
+		// Dismiss the progress dialog.
+		uiListener.showProgressDialog(false);
+	}
 }
