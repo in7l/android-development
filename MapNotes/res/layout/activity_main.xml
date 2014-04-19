@@ -1,33 +1,28 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
-    <FrameLayout
+    <fragment
         android:id="@+id/NoteListContainer"
+        android:name="fi.metropolia.intl.mapnotes.NoteListFragment"
         android:layout_width="match_parent"
         android:layout_height="0dip"
-        android:layout_weight="1.0" >
-    </FrameLayout>
-
-    <LinearLayout
-        android:orientation="horizontal"
+        android:layout_weight="1.0"
+        tools:layout="@layout/note_list" />
+    
+    <fragment
+        android:id="@+id/DistanceSelectorContainer"
+        android:name="fi.metropolia.intl.mapnotes.DistanceSelectorFragment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="5dip"
-        android:gravity="center_vertical" >
-        <SeekBar
-		    android:id="@+id/seekBar1"
-		    android:layout_width="0dip"
-		    android:layout_weight="1.0"
-		    android:layout_height="wrap_content" />
-        
-		<Button
-			android:id="@+id/button1"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="M" />
-        
-    </LinearLayout>
-
+        tools:layout="@layout/distance_selector" />
+    
+    <Button
+            android:id="@+id/ShowHideMapButton"
+            android:layout_width="match_parent"
+            android:layout_height="25dip"
+            android:text="@string/expand_map"
+            android:background="@drawable/arrow_down_nine" />
 </LinearLayout>
