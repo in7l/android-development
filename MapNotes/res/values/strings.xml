@@ -7,6 +7,10 @@
     <string name="note_description_placeholder">Note description</string>
     <string name="default_distance">&lt; 15m</string>
     <string name="distance">Distance:</string>
-    <string name="expand_map">expand map</string>
+    <string name="expand_map">map</string>
+    <string name="infinity">∞</string>
+    <string name="distance_placeholder">15m</string>
+    <string name="map_placeholder">Map Placeholder</string>
+    <string name="datetime_placeholder">02:00 (20.04.14)</string>
 
 </resources>

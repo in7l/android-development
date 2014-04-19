@@ -4,7 +4,9 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingBottom="5dip" >
+    android:paddingBottom="10dip"
+    android:paddingTop="10dip"
+    android:background="@drawable/distance_selector" >
     
     <SeekBar
 		android:id="@+id/DistanceSeekBar"
@@ -29,8 +31,8 @@
 	        android:id="@+id/DistanceTextView"
 	        android:layout_width="wrap_content"
 	        android:layout_height="match_parent"
-	        android:maxLength="6"
-	        android:minEms="6"
+	        android:maxLength="8"
+	        android:minEms="8"
 	        android:gravity="center"
 	        android:text="@string/default_distance" />
         

@@ -2,21 +2,49 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="75dip"
-    android:orientation="vertical" >
-
-    <TextView
-        android:id="@+id/note_summary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:lines="1"
-        android:textStyle="bold"
-        android:text="@string/note_summary_placeholder" />
+    android:orientation="vertical"
+    android:paddingLeft="5dip"
+    android:paddingRight="10dip" >
     
-    <TextView
-        android:id="@+id/note_description"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:lines="3"
-        android:text="@string/note_description_placeholder" />
+        android:layout_height="wrap_content" >
+        
+		<TextView
+			android:id="@+id/note_summary"
+			android:layout_width="0dip"
+			android:layout_weight="1.0"
+			android:layout_height="wrap_content"
+			android:lines="1"
+			android:textStyle="bold"
+			android:text="@string/note_summary_placeholder" />
+		
+		<TextView 
+		    android:id="@+id/note_datetime"
+		    android:layout_width="wrap_content"
+		    android:layout_height="match_parent"
+		    android:text="@string/datetime_placeholder"/>
+    </LinearLayout>
+    
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        
+	    <TextView
+	        android:id="@+id/note_description"
+	        android:layout_width="0dip"
+	        android:layout_weight="1.0"
+	        android:layout_height="wrap_content"
+	        android:lines="3"
+	        android:text="@string/note_description_placeholder" />
+    
+	    <TextView 
+		    android:id="@+id/note_distance"
+		    android:layout_width="wrap_content"
+		    android:layout_height="match_parent"
+		    android:text="@string/distance_placeholder"
+		    android:gravity="bottom"/>
+    </LinearLayout>
 
 </LinearLayout>

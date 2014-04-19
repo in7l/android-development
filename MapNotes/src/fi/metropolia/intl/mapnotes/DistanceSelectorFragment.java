@@ -28,18 +28,36 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 	
 	private void setDistanceRange(int distance) {
 		String metric = "m";
+		String distanceString = String.valueOf(distance);
+		
+		// If the distance is more at least 1km
+		// some different notation will be used.s
 		if (distance >= 1000) {
 			metric = "km";
-			distance = distance / 1000;
+			double distanceInKm = distance / 1000.0;
+			distanceString = String.format("%.1f", distanceInKm);
 		}
-		String distanceRangeString = "< " + distance + metric;
+		String distanceRangeString = "< " + distanceString + metric;
+		
+		if (distance < 0) {
+			// Negative distance signifies infinity,
+			// i.e. no distance limitation.
+			distanceRangeString = getString(R.string.infinity);
+		}
+		
 		distanceTextView.setText(distanceRangeString);
 	}
 
 	@Override
 	public void onProgressChanged(SeekBar seekBar, int progress,
 			boolean fromUser) {
-		int distance = progress;
+		int distance = calculateProgressDistance(progress);
+		
+		// If the SeekBar has been set to the maximum
+		// assume no distance limits should be set.
+		if (progress == 1000) {
+			distance = -1;
+		}
 		setDistanceRange(distance);
 	}
 
@@ -53,6 +71,16 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 	public void onStopTrackingTouch(SeekBar seekBar) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	public int calculateProgressDistance(int progress) {
+		int distance = (int) Math.pow(progress, 1.5);
+		// Round up to multiples of 5.
+		distance = ((int)Math.ceil(distance / 5.0)) * 5;
+		// The distance can be minimum 15.
+		distance += 15;
+		
+		return distance;
 	}
 	
 }
