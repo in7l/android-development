@@ -14,7 +14,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class NoteListFragment extends ListFragment {
-	private NoteListener mListener;
+	private NoteListListener mListener;
 	private ArrayList<Note> notes;
 	
 	@Override
@@ -24,7 +24,7 @@ public class NoteListFragment extends ListFragment {
 		// Attempt to save a reference to the activity
 		// which should implement NoteListener.
 		try {
-			mListener = (NoteListener)activity;
+			mListener = (NoteListListener)activity;
 		} catch (ClassCastException e) {
 			throw new ClassCastException(activity.toString()
 					+ " must implement NoteListener");

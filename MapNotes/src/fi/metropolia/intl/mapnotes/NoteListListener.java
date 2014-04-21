@@ -1,5 +1,5 @@
 package fi.metropolia.intl.mapnotes;
 
-public interface NoteListener {
+public interface NoteListListener {
 	public void openNote(Note note);
 }

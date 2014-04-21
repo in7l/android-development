@@ -12,5 +12,6 @@
     <string name="distance_placeholder">15m</string>
     <string name="map_placeholder">Map Placeholder</string>
     <string name="datetime_placeholder">02:00 (20.04.14)</string>
+    <string name="view_note">View Note</string>
 
 </resources>

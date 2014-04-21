@@ -1,5 +1,6 @@
 package fi.metropolia.intl.mapnotes;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -10,7 +11,8 @@ import java.util.TreeMap;
 
 import android.location.Location;
 
-public class Note {
+public class Note implements Serializable {
+	public final static String NOTE_BUNDLE_KEY = "note";
 	private String summary = null;
 	private String description = null;
 	private Location location = null;
@@ -47,7 +49,8 @@ public class Note {
 	/**
 	 * @return Map<Integer, String> where the key is an id for a View
 	 * such as TextView and the String is the value that should be
-	 * assigned to that element. 
+	 * assigned to that element. The view ids should match the ones
+	 * defined in the layout for a single Note item in a ListView.
 	 */
 	public Map<Integer, String> getIdValueMap() {
 		// Create a map of Integer-String value pairs
