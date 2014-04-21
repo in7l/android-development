@@ -2,6 +2,7 @@ package fi.metropolia.intl.mapnotes;
 
 import android.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,7 +11,10 @@ import android.widget.TextView;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
 public class DistanceSelectorFragment extends Fragment implements OnSeekBarChangeListener {
-	TextView distanceTextView;
+	// The exponent has been obtained by the following equation:
+	// maxSeekBarValue ^ x = maxDistance - minDistance
+	public final static double DATE_SELECTOR_EXPONENT = 2.3494;
+	private TextView distanceTextView;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -55,7 +59,7 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 		
 		// If the SeekBar has been set to the maximum
 		// assume no distance limits should be set.
-		if (progress == 1000) {
+		if (progress == seekBar.getMax()) {
 			distance = -1;
 		}
 		setDistanceRange(distance);
@@ -63,22 +67,21 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 
 	@Override
 	public void onStartTrackingTouch(SeekBar seekBar) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
-		// TODO Auto-generated method stub
-		
+		// TODO: Execute time-consuming business logic
+		// once the user has stopped dragging the SeekBar.
+		Log.i("Map", "register changes");
 	}
 	
 	public int calculateProgressDistance(int progress) {
-		int distance = (int) Math.pow(progress, 1.5);
-		// Round up to multiples of 5.
-		distance = ((int)Math.ceil(distance / 5.0)) * 5;
+		int distance = (int) Math.pow(progress, DATE_SELECTOR_EXPONENT);
 		// The distance can be minimum 15.
 		distance += 15;
+		// Round up to multiples of 5.
+		distance = ((int)Math.ceil(distance / 5.0)) * 5;
 		
 		return distance;
 	}

@@ -1,6 +1,8 @@
 package fi.metropolia.intl.mapnotes;
 
 import android.os.Bundle;
+import android.R.anim;
+import android.R.animator;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -11,7 +13,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 
-public class MainActivity extends Activity implements ToggleMapListener {
+public class MainActivity extends Activity implements ToggleMapListener, NoteListener {
 	FragmentManager fragmentManager;
 	private View mapContainer;
 
@@ -40,11 +42,10 @@ public class MainActivity extends Activity implements ToggleMapListener {
 			// Create the map fragment.
 			Fragment mapFragment = new MapFragment();
 			FragmentTransaction transaction = fragmentManager.beginTransaction();
+			// Set animation for the transaction.
+			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);
 			// Add the fragment to the MapContainer.
 			transaction.add(R.id.MapContainer, mapFragment);
-			// Store the changes to backstack so that user can revert them
-			// by pressing back.
-			transaction.addToBackStack(null);
 			// Commit the changes.
 			transaction.commit();
 			
@@ -55,7 +56,12 @@ public class MainActivity extends Activity implements ToggleMapListener {
 			Log.i("Map", "Hide map");
 			// Update the height and weight of the mapContainer.
 			updateMapContainerProperties(show);
-			fragmentManager.popBackStack();
+			FragmentTransaction transaction = fragmentManager.beginTransaction();
+			// Set animation for the transaction.
+			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);
+			// Remove the fragment from MapContainer.
+			transaction.remove(fragmentManager.findFragmentById(R.id.MapContainer));
+			transaction.commit();
 		}
 	}
 	
@@ -71,9 +77,16 @@ public class MainActivity extends Activity implements ToggleMapListener {
 					new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f));
 		} else {
 			// The mapContainer should be hidden.
+			// Set the MapContainer layout weight to 0.
 			mapContainer.setLayoutParams(
-					new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, 0f));
+					new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT,
+							LayoutParams.WRAP_CONTENT, 0f));
 		}
+	}
+
+	@Override
+	public void openNote(Note note) {
+		Log.i("Note", "Got note with description: " + note.getDescriptionString());
 	}
 
 }

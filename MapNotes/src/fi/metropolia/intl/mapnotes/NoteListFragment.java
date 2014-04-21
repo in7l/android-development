@@ -1,5 +1,8 @@
 package fi.metropolia.intl.mapnotes;
 
+import java.util.ArrayList;
+
+import android.app.Activity;
 import android.app.ListFragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,9 +14,23 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class NoteListFragment extends ListFragment {
-	private String[] descriptions = { "descr1", "test2", "test3", "test4",
-			"test5", "test6", "test7", "test8" };
+	private NoteListener mListener;
+	private ArrayList<Note> notes;
 	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
+		// Attempt to save a reference to the activity
+		// which should implement NoteListener.
+		try {
+			mListener = (NoteListener)activity;
+		} catch (ClassCastException e) {
+			throw new ClassCastException(activity.toString()
+					+ " must implement NoteListener");
+		}
+	}
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
@@ -24,17 +41,26 @@ public class NoteListFragment extends ListFragment {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		// Create an array adapter for filling in the descriptions.
-		ArrayAdapter<String> noteDescriptionsAdapter = new ArrayAdapter<String>(
-				getActivity(), R.layout.note_collapsed, R.id.note_description, descriptions);
-		setListAdapter(noteDescriptionsAdapter);
+		
+		// Create an ArrayList of Note objects.
+		notes = new ArrayList<Note>();
+		
+		// Add a few test notes.
+		notes.add(new Note("Descr1", null, null, "Summary1"));
+		notes.add(new Note("Descr2", null, null, "Summary2"));
+		notes.add(new Note("Descr3", null, null, "Summary3"));
+		
+		// Create an adapter for filling in the note elements in the list.
+		IdValueAdapter noteAdapter = new IdValueAdapter(getActivity(),
+				R.layout.note_collapsed, Note.getNoteListAsIdValueMap(notes));
+		setListAdapter(noteAdapter);
 	}
 
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		// Get the dcescription from the pressed item.
-		String description = (String) ((TextView)v.findViewById(R.id.note_description)).getText();
-		Log.i("Test", "Pressed item with description: " + description);
+		// Get the description from the pressed item.
+		Log.i("Note", "Pressed item on position: " + position);
+		mListener.openNote(notes.get(position));
 	}
 	
 }

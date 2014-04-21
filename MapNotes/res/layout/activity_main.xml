@@ -29,5 +29,5 @@
     <FrameLayout
         android:id="@+id/MapContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="0dip" />
 </LinearLayout>
