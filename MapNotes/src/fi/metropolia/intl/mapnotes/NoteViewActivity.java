@@ -14,6 +14,14 @@ public class NoteViewActivity extends Activity {
 		
 		// Get the extras from the intent that started this activity.
 		Bundle extras = getIntent().getExtras();
+		// Get the Note object from the extras.
+		Note note = (Note)extras.getSerializable(Note.NOTE_BUNDLE_KEY);
+		// Get the summary from this Note.
+		String noteSummary = note.getSummaryString();
+		// If the note summary is not empty, update the activity title.
+		if (noteSummary != "") {
+			setTitle(noteSummary);
+		}
 		
 		// Create a NoteViewFragment.
 		NoteViewFragment fragment = new NoteViewFragment();

@@ -2,7 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:padding="5dip" >
 
     <fragment
         android:id="@+id/NoteListContainer"
@@ -12,19 +13,28 @@
         android:layout_weight="1.0"
         tools:layout="@layout/note_list" />
     
-    <fragment
-        android:id="@+id/DistanceSelectorContainer"
-        android:name="fi.metropolia.intl.mapnotes.DistanceSelectorFragment"
+    <LinearLayout 
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:layout="@layout/distance_selector" />
-    
-    <fragment
-        android:id="@+id/ToggleMapContainer"
-        android:name="fi.metropolia.intl.mapnotes.ToggleMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        tools:layout="@layout/toggle_map" />
+        android:baselineAligned="false">
+        
+        <fragment
+	        android:id="@+id/DistanceSelectorContainer"
+	        android:name="fi.metropolia.intl.mapnotes.DistanceSelectorFragment"
+	        android:layout_width="0dip"
+	        android:layout_height="match_parent"
+	        android:layout_weight="1.0"
+	        tools:layout="@layout/distance_selector" />
+	    
+	    <fragment
+	        android:id="@+id/ToggleMapContainer"
+	        android:name="fi.metropolia.intl.mapnotes.ToggleMapFragment"
+	        android:layout_width="wrap_content"
+	        android:layout_height="match_parent"
+	        tools:layout="@layout/toggle_map" />
+	    
+    </LinearLayout>	   
     
     <FrameLayout
         android:id="@+id/MapContainer"

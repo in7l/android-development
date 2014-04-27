@@ -26,15 +26,11 @@ public class NoteViewFragment extends Fragment {
 		// assign the note properties to their corresponding Views.
 		if (note != null) {
 			// Find TextViews.
-			TextView summaryTextView = (TextView)v.findViewById(R.id.note_summary);
 			TextView datetimeTextView = (TextView)v.findViewById(R.id.note_datetime);
-			TextView distanceTextView = (TextView)v.findViewById(R.id.note_distance);
 			TextView descriptionTextView = (TextView)v.findViewById(R.id.note_description);
 			
 			// Update the TextViews' texts based on the note properties.
-			summaryTextView.setText(note.getSummaryString());
 			datetimeTextView.setText(note.getDatetimeString());
-			distanceTextView.setText(note.getDistanceString());
 			descriptionTextView.setText(note.getDescriptionString());
 		}
 		

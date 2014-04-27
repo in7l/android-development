@@ -13,5 +13,9 @@
     <string name="map_placeholder">Map Placeholder</string>
     <string name="datetime_placeholder">02:00 (20.04.14)</string>
     <string name="view_note">View Note</string>
+    <string name="summary">Summary:</string>
+    <string name="datetime">Time:</string>
+    <string name="description">Description:</string>
+    <string name="toggle_map">Toggle map</string>
 
 </resources>

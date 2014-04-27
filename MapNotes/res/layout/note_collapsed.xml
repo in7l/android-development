@@ -23,7 +23,8 @@
 		    android:id="@+id/note_datetime"
 		    android:layout_width="wrap_content"
 		    android:layout_height="match_parent"
-		    android:text="@string/datetime_placeholder"/>
+		    android:text="@string/datetime_placeholder"
+		    android:textColor="@color/SteelBlue" />
     </LinearLayout>
     
     <LinearLayout
@@ -36,6 +37,7 @@
 	        android:layout_width="0dip"
 	        android:layout_weight="1.0"
 	        android:layout_height="wrap_content"
+	        android:gravity="fill_horizontal"
 	        android:lines="3"
 	        android:text="@string/note_description_placeholder" />
     
@@ -44,7 +46,8 @@
 		    android:layout_width="wrap_content"
 		    android:layout_height="match_parent"
 		    android:text="@string/distance_placeholder"
-		    android:gravity="bottom"/>
+		    android:gravity="bottom"
+		    android:textColor="@color/DodgerBlue" />
     </LinearLayout>
 
 </LinearLayout>
