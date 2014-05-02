@@ -19,5 +19,6 @@
     <string name="toggle_map">Toggle map</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
+    <string name="edit_note">Edit Note</string>
 
 </resources>

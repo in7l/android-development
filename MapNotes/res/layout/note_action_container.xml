@@ -5,7 +5,7 @@
     android:orientation="vertical" >
     
     <FrameLayout
-        android:id="@+id/NoteViewContainer"
+        android:id="@+id/NoteActionContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
