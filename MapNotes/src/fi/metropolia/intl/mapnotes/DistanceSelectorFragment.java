@@ -12,8 +12,8 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 
 public class DistanceSelectorFragment extends Fragment implements OnSeekBarChangeListener {
 	// The exponent has been obtained by the following equation:
-	// maxSeekBarValue ^ x = maxDistance - minDistance
-	public final static double DATE_SELECTOR_EXPONENT = 2.3494;
+	// (maxSeekBarValue - 1) ^ x = maxDistance - minDistance
+	public final static double DATE_SELECTOR_EXPONENT = 2.3546;
 	private TextView distanceTextView;
 
 	@Override

@@ -6,7 +6,12 @@ import android.app.Activity;
 import android.app.ListFragment;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -17,6 +22,14 @@ public class NoteListFragment extends ListFragment {
 	private NoteListListener mListener;
 	private ArrayList<Note> notes;
 	
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
+		
+		// Register the list view for context menu.
+		registerForContextMenu(getListView());
+	}
+
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
@@ -64,5 +77,21 @@ public class NoteListFragment extends ListFragment {
 		Log.i("Note", "Pressed item on position: " + position);
 		mListener.openNote(notes.get(position));
 	}
+
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+		
+		menu.add(Menu.NONE, 0, Menu.NONE, "Delete");
+	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		
+		return super.onContextItemSelected(item);
+	}
+	
 	
 }

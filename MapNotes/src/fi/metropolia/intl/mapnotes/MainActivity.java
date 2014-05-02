@@ -54,14 +54,14 @@ public class MainActivity extends Activity implements ToggleMapListener, NoteLis
 		} else {
 			// The map should be hidden.
 			Log.i("Map", "Hide map");
-			// Update the height and weight of the mapContainer.
-			updateMapContainerProperties(show);
 			FragmentTransaction transaction = fragmentManager.beginTransaction();
 			// Set animation for the transaction.
 			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);
 			// Remove the fragment from MapContainer.
 			transaction.remove(fragmentManager.findFragmentById(R.id.MapContainer));
 			transaction.commit();
+			// Update the height and weight of the mapContainer.
+			updateMapContainerProperties(show);
 		}
 	}
 	
