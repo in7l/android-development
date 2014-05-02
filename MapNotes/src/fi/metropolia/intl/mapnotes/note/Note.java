@@ -9,16 +9,17 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import fi.metropolia.intl.mapnotes.R;
 import fi.metropolia.intl.mapnotes.R.id;
-import android.location.Location;
 
 public class Note implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public final static String NOTE_BUNDLE_KEY = "note";
 	private String summary = null;
 	private String description = null;
-	private Location location = null;
+	private LatLng location = null;
 	private Date datetime;
 	
 	/* Constructors */
@@ -30,15 +31,15 @@ public class Note implements Serializable {
 		this(description, null);
 	}
 
-	public Note(String description, Location location) {
+	public Note(String description, LatLng location) {
 		this(description, location, new Date());
 	}
 	
-	public Note(String description, Location location, Date datetime) {
+	public Note(String description, LatLng location, Date datetime) {
 		this(description, location, datetime, null);
 	}
 
-	public Note(String description, Location location,
+	public Note(String description, LatLng location,
 			Date datetime, String summary) {
 		this.summary = summary;
 		this.description = description;

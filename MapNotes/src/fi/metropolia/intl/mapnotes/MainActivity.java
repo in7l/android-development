@@ -1,5 +1,6 @@
 package fi.metropolia.intl.mapnotes;
 
+import fi.metropolia.intl.mapnotes.db.NoteDbHelper;
 import fi.metropolia.intl.mapnotes.map.*;
 import fi.metropolia.intl.mapnotes.note.*;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 
 public class MainActivity extends Activity implements ToggleMapListener, NoteListListener {
+	private NoteDbHelper dbHelper;
 	FragmentManager fragmentManager;
 	private View mapContainer;
 
@@ -26,6 +28,10 @@ public class MainActivity extends Activity implements ToggleMapListener, NoteLis
 		
 		// Store a reference to the fragment manager.
 		fragmentManager = getFragmentManager();
+		
+		// Create a SQLiteOpenHelper.
+		dbHelper = new NoteDbHelper(this);
+		dbHelper.findNotes();
 	}
 
 	@Override

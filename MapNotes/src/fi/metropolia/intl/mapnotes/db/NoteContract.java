@@ -10,6 +10,7 @@ public class NoteContract {
     /* Inner class that defines the Note table contents */
     public static abstract class NoteEntry implements BaseColumns {
     	public static final String TABLE_NAME = "note";
+    	public static final String COLUMN_FULL_ID = TABLE_NAME + "." + _ID;
     	public static final String COLUMN_NAME_SUMMARY = "summary";
     	public static final String COLUMN_NAME_DESCRIPTION = "description";
     	public static final String COLUMN_NAME_DATETIME_TIMESTAMP = "datetime_ts";
@@ -19,6 +20,7 @@ public class NoteContract {
     /* Inner class that defines the Location table contents */
     public static abstract class LocationEntry implements BaseColumns {
     	public static final String TABLE_NAME = "location";
+    	public static final String COLUMN_FULL_ID = TABLE_NAME + "." + _ID;
     	public static final String COLUMN_NAME_LOCATION_X = "location_x";
     	public static final String COLUMN_NAME_LOCATION_Y = "location_y";
     }
