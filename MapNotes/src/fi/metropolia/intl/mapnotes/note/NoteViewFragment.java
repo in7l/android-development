@@ -1,7 +1,10 @@
-package fi.metropolia.intl.mapnotes;
+package fi.metropolia.intl.mapnotes.note;
 
 import java.util.Map;
 
+import fi.metropolia.intl.mapnotes.R;
+import fi.metropolia.intl.mapnotes.R.id;
+import fi.metropolia.intl.mapnotes.R.layout;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;

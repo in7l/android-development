@@ -1,5 +1,8 @@
-package fi.metropolia.intl.mapnotes;
+package fi.metropolia.intl.mapnotes.map;
 
+import fi.metropolia.intl.mapnotes.R;
+import fi.metropolia.intl.mapnotes.R.id;
+import fi.metropolia.intl.mapnotes.R.layout;
 import android.app.Activity;
 import android.app.Fragment;
 import android.os.Bundle;

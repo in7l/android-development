@@ -17,5 +17,7 @@
     <string name="datetime">Time:</string>
     <string name="description">Description:</string>
     <string name="toggle_map">Toggle map</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
 
 </resources>

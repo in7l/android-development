@@ -1,33 +1,48 @@
-package fi.metropolia.intl.mapnotes;
+package fi.metropolia.intl.mapnotes.note;
 
 import java.util.ArrayList;
 
+import fi.metropolia.intl.mapnotes.IdValueAdapter;
+import fi.metropolia.intl.mapnotes.R;
+import fi.metropolia.intl.mapnotes.R.layout;
 import android.app.Activity;
 import android.app.ListFragment;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.View.OnLongClickListener;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.AdapterView.OnItemLongClickListener;
 
-public class NoteListFragment extends ListFragment {
+public class NoteListFragment extends ListFragment implements OnItemLongClickListener,
+		NoteListActionModeCallbackListener {
 	private NoteListListener mListener;
 	private ArrayList<Note> notes;
+	private ActionMode.Callback mActionModeCallback = new NoteListActionModeCallback(this);
+	private ActionMode mActionMode = null;
+	private int actionModeItemIndex = -1;
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		
-		// Register the list view for context menu.
-		registerForContextMenu(getListView());
+		getListView().setChoiceMode(ListView.CHOICE_MODE_NONE);
+		// Set the background color of the selected item.
+		getListView().setSelector(R.color.Beige);
+		
+		// Register an OnItemLongClickListener for the ListView.
+		getListView().setOnItemLongClickListener(this);
 	}
 
 	@Override
@@ -73,25 +88,66 @@ public class NoteListFragment extends ListFragment {
 
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
-		// Get the description from the pressed item.
+		// Dismiss the contextual action bar if it was started.
+		if (mActionMode != null) {
+			mActionMode.finish();
+		}
+
+		// Get the position from the pressed item.
 		Log.i("Note", "Pressed item on position: " + position);
+		
 		mListener.openNote(notes.get(position));
 	}
 
-
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
-		super.onCreateContextMenu(menu, v, menuInfo);
+	public boolean onItemLongClick(AdapterView<?> parent, View view,
+			int position, long id) {
+		// Log.i("Note", "onLongClick");
+		if (mActionMode != null) {
+			return false;
+		}
 		
-		menu.add(Menu.NONE, 0, Menu.NONE, "Delete");
-	}
-
-	@Override
-	public boolean onContextItemSelected(MenuItem item) {
-		
-		return super.onContextItemSelected(item);
+		// Mark for which item the CAB will be started.
+		actionModeItemIndex = position;
+		// Start the Contextual Action Bar using mActionModeCallback.
+        mActionMode = getActivity().startActionMode(mActionModeCallback);
+        getListView().setItemChecked(position, true);
+        return true;
 	}
 	
+	@Override
+	public void editNote() {
+		// This method is called from contextual action mode.
+		// Get the position of the last item for which contextual action mode
+		// was started.
+		// Make sure there is a correctly saved index of the item for which
+		// contextual action mode was started.
+		if (actionModeItemIndex != -1) {
+			Note note = notes.get(actionModeItemIndex);
+			// Mark that the action for this item will be performed (only once).
+			actionModeItemIndex = -1;
+			mListener.editNote(note);
+		}
+	}
+
+	@Override
+	public void deleteNote() {
+		// This method is called from contextual action mode.
+		// Get the position of the last item for which contextual action mode
+		// was started.
+		// Make sure there is a correctly saved index of the item for which
+		// contextual action mode was started.
+		if (actionModeItemIndex != -1) {
+			Note note = notes.get(actionModeItemIndex);
+			// Mark that the action for this item will be performed (only once).
+			actionModeItemIndex = -1;
+			mListener.deleteNote(note);
+		}
+	}
+
+	@Override
+	public void destroyActionMode() {
+		mActionMode = null;
+	}
 	
 }

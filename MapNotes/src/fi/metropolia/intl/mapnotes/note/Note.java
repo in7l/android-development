@@ -1,4 +1,4 @@
-package fi.metropolia.intl.mapnotes;
+package fi.metropolia.intl.mapnotes.note;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -9,9 +9,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
+import fi.metropolia.intl.mapnotes.R;
+import fi.metropolia.intl.mapnotes.R.id;
 import android.location.Location;
 
 public class Note implements Serializable {
+	private static final long serialVersionUID = 1L;
 	public final static String NOTE_BUNDLE_KEY = "note";
 	private String summary = null;
 	private String description = null;

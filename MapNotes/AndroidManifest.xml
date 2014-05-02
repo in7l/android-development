@@ -23,7 +23,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="fi.metropolia.intl.mapnotes.NoteViewActivity"
+            android:name="fi.metropolia.intl.mapnotes.note.NoteViewActivity"
             android:label="@string/view_note" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

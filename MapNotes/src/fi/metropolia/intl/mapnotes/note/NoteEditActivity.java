@@ -1,4 +1,4 @@
-package fi.metropolia.intl.mapnotes;
+package fi.metropolia.intl.mapnotes.note;
 
 import android.app.Activity;
 

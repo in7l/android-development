@@ -6,7 +6,7 @@
 
     <fragment
         android:id="@+id/NoteListContainer"
-        android:name="fi.metropolia.intl.mapnotes.NoteListFragment"
+        android:name="fi.metropolia.intl.mapnotes.note.NoteListFragment"
         android:layout_width="match_parent"
         android:layout_height="0dip"
         android:layout_weight="1.0"
@@ -31,7 +31,7 @@
 	    
 	    <fragment
 	        android:id="@+id/ToggleMapContainer"
-	        android:name="fi.metropolia.intl.mapnotes.ToggleMapFragment"
+	        android:name="fi.metropolia.intl.mapnotes.map.ToggleMapFragment"
 	        android:layout_width="wrap_content"
 	        android:layout_height="match_parent"
 	        tools:layout="@layout/toggle_map" />

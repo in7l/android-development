@@ -1,5 +1,10 @@
 package fi.metropolia.intl.mapnotes;
 
+import fi.metropolia.intl.mapnotes.map.MapFragment;
+import fi.metropolia.intl.mapnotes.map.ToggleMapListener;
+import fi.metropolia.intl.mapnotes.note.Note;
+import fi.metropolia.intl.mapnotes.note.NoteListListener;
+import fi.metropolia.intl.mapnotes.note.NoteViewActivity;
 import android.os.Bundle;
 import android.R.animator;
 import android.app.Activity;
@@ -86,13 +91,23 @@ public class MainActivity extends Activity implements ToggleMapListener, NoteLis
 
 	@Override
 	public void openNote(Note note) {
-		Log.i("Note", "Got note with description: " + note.getDescriptionString());
+		Log.i("Note", "Opening note with description: " + note.getDescriptionString());
 		// Make a new intent to start a NoteViewActivity.
 		Intent intent = new Intent(this, NoteViewActivity.class);
 		// Pass the serialized Note to that activity.
 		intent.putExtra(Note.NOTE_BUNDLE_KEY, note);
 		// Start the activity.
 		startActivity(intent);
+	}
+
+	@Override
+	public void editNote(Note note) {
+		Log.i("Note", "Editing note with description: " + note.getDescriptionString());
+	}
+
+	@Override
+	public void deleteNote(Note note) {
+		Log.i("Note", "Deleting note with description: " + note.getDescriptionString());
 	}
 
 }
