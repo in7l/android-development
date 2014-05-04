@@ -24,6 +24,8 @@ public class NoteEditFragment extends Fragment {
 	private EditText descriptionEditText;
 	// The checkbox should be shown only when editing a Note.
 	private CheckBox updateDatetimeCheckBox = null;
+	// The checkbox should be unchecked by default when editing a Note.
+	private CheckBox saveCurrentLocationCheckBox = null;
 	private Note note;
 	private NoteEditListener mListener;
 	// A flag that marks if this fragment is used for creating or editing a Note.
@@ -55,6 +57,8 @@ public class NoteEditFragment extends Fragment {
 		// Find EditText views.
 		summaryEditText = (EditText)v.findViewById(R.id.note_summary);
 		descriptionEditText = (EditText)v.findViewById(R.id.note_description);
+		// Find a CheckBox view.
+		saveCurrentLocationCheckBox = (CheckBox)v.findViewById(R.id.UseLocation);
 		
 		// Get arguments passed to this fragment.
 		Bundle bundle = getArguments();
@@ -75,8 +79,10 @@ public class NoteEditFragment extends Fragment {
 			summaryEditText.setText(note.getSummaryString());
 			descriptionEditText.setText(note.getDescriptionString());
 			// Show the 'update datetime' checkbox.
-			updateDatetimeCheckBox = (CheckBox) v.findViewById(R.id.update_datetime);
+			updateDatetimeCheckBox = (CheckBox) v.findViewById(R.id.UpdateDatetime);
 			updateDatetimeCheckBox.setVisibility(View.VISIBLE);
+			// The save current location checkbox should be unchecked when editing notes.
+			saveCurrentLocationCheckBox.setChecked(false);
 		}
 		
 		return v;
@@ -107,19 +113,25 @@ public class NoteEditFragment extends Fragment {
 		// Gather information from the Views.
 		String summary = summaryEditText.getText().toString();
 		String description = descriptionEditText.getText().toString();
-		LatLng location = null;
+		// Check if the user marked that the current location
+		// should be used for this note.
+		boolean useCurrentLocation = saveCurrentLocationCheckBox.isChecked();
 		
 		if (createNote) {
 			// Create a new Note object.
 			// Always use the current time when creating new notes.
 			Date datetime = new Date();
+			LatLng location = null;
 			note = new Note(description, location, datetime, summary);
+			// Mark whether the current location should be used for the note.
+			note.setUseCurrentLocation(useCurrentLocation);
 			mListener.createNote(note);
 		} else {
 			// If there is already a Note object, update its fields.
 			note.setSummary(summary);
 			note.setDescription(description);
-			note.setLocation(location);
+			// Mark whether the current location should be used for the note.
+			note.setUseCurrentLocation(useCurrentLocation);
 			// If the user marked that the datetime of this Note should be updated.
 			if (updateDatetimeCheckBox.isChecked()) {
 				// Set the current time to the Note.

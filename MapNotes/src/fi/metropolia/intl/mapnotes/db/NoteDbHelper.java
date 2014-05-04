@@ -58,6 +58,13 @@ public class NoteDbHelper extends SQLiteOpenHelper {
     // Runnable for finding/selecting notes.
     private class SelectNotes implements Runnable {
     	private SQLiteDatabase db = null;
+    	private int distanceInMeters = -1;
+    	private LatLng currentLocation;
+    	
+    	public SelectNotes(int distanceInMeters, LatLng currentLocation) {
+    		this.distanceInMeters = distanceInMeters;
+    		this.currentLocation = currentLocation;
+    	}
 
 		@Override
 		public void run() {
@@ -130,14 +137,57 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			}
 			
 			// Go through all rows and create Note objects.
-			while (!cursor.isAfterLast()) {
+			while (cursor.moveToNext()) {
+				// First get the location to verify if this note is within range.
+				double locationX = -1;
+				double locationY = -1;
+				LatLng location = null;
+				float distanceToCurrentLocation = -1;
+				
+				int locationXIndex = cursor.getColumnIndexOrThrow(
+					LocationEntry.COLUMN_NAME_LOCATION_X);
+				if (cursor.getType(locationXIndex) != Cursor.FIELD_TYPE_NULL) {
+					locationX = cursor.getDouble(locationXIndex);
+				}
+				int locationYIndex = cursor.getColumnIndexOrThrow(
+					LocationEntry.COLUMN_NAME_LOCATION_Y);
+				if (cursor.getType(locationYIndex) != Cursor.FIELD_TYPE_NULL) {
+					locationY = cursor.getDouble(locationYIndex);
+				}
+				// If both x and y locations were fetched successfully.
+				if (locationX != -1 && locationY != -1) {
+					location = new LatLng(locationX, locationY);
+				}
+				
+				// If both the current location and the note location are known.
+				if (currentLocation != null && location != null) {
+					// Calculate the distance between the current location
+					// and the location of the note.
+					float[] results = new float[1];
+					Location.distanceBetween(currentLocation.latitude, currentLocation.longitude,
+							location.latitude, location.longitude, results);
+					distanceToCurrentLocation = results[0];
+					
+					Log.i("DB", "Found a note whose distance from " +
+							"the current location is " + distanceToCurrentLocation);
+				}
+				
+				// If there is a distance filter active.
+				if (distanceInMeters != -1) {
+					// If the distance to the current location cannot be determined.
+					// OR
+					// If the distance to the current location is greater than
+					// the distance filter limit.
+					if (distanceToCurrentLocation == -1 || distanceToCurrentLocation >= distanceInMeters) {
+						// This note should not be shown.
+						continue;
+					}
+				}
+				
 				String summary = null;
 				String description = null;
 				long datetimeTimestamp = -1;
 				Date datetime = null;
-				double locationX = -1;
-				double locationY = -1;
-				LatLng location = null;
 				long databaseId = -1;
 				
 				// Get summary.
@@ -162,22 +212,6 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					datetime = new Date(datetimeTimestamp);
 				}
 				
-				// Get location.
-				int locationXIndex = cursor.getColumnIndexOrThrow(
-					LocationEntry.COLUMN_NAME_LOCATION_X);
-				if (cursor.getType(locationXIndex) != Cursor.FIELD_TYPE_NULL) {
-					locationX = cursor.getDouble(locationXIndex);
-				}
-				int locationYIndex = cursor.getColumnIndexOrThrow(
-					LocationEntry.COLUMN_NAME_LOCATION_Y);
-				if (cursor.getType(locationYIndex) != Cursor.FIELD_TYPE_NULL) {
-					locationY = cursor.getDouble(locationYIndex);
-				}
-				// If both x and y locations were fetched successfully.
-				if (locationX != -1 && locationY != -1) {
-					location = new LatLng(locationX, locationY);
-				}
-				
 				// Get Note database id.
 				int databaseIdIndex = cursor.getColumnIndexOrThrow(NoteEntry._ID);
 				if (cursor.getType(databaseIdIndex) != Cursor.FIELD_TYPE_NULL) {
@@ -188,9 +222,6 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 						summary, databaseId);
 				// Add it to the resulting array list of Notes.
 				notes.add(note);
-				
-				// Move to the next row of the database results.
-				cursor.moveToNext();
 			}
 			
 			return notes;
@@ -243,6 +274,15 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			values.put(NoteEntry.COLUMN_NAME_DESCRIPTION, note.getDescription());
 			values.put(NoteEntry.COLUMN_NAME_DATETIME_TIMESTAMP, note.getDatetimeTimestamp());
 			
+			// Create a map of location values if applicable.
+			ContentValues locationValues = null;
+			LatLng noteLocation = note.getLocation();
+			if (noteLocation != null) {
+				locationValues = new ContentValues();
+				locationValues.put(LocationEntry.COLUMN_NAME_LOCATION_X, noteLocation.latitude);
+				locationValues.put(LocationEntry.COLUMN_NAME_LOCATION_Y, noteLocation.longitude);
+			}
+			
 			long databaseId = note.getDatabaseId();
 			// If this is an old Note.
 			if (databaseId != -1) {
@@ -268,6 +308,14 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					// Assign the databaseId to the Note object.
 					note.setDatabaseId(newRowId);
 					Log.i("DB", "Saved note with id " + note.getDatabaseId());
+					
+					// Insert a new location.
+					if (locationValues != null) {
+						long locationRowId;
+						locationRowId = db.insert(LocationEntry.TABLE_NAME, null, locationValues);
+						Log.i("DB", "Saved location with id " + locationRowId);
+					}
+					
 					return true;
 				}
 				else {
@@ -335,14 +383,12 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 		}
     }
     
-    private SelectNotes selectNotesRunnable;
     private Handler mHandler;
 	
 	public NoteDbHelper(Context context, Handler handler) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		// Store a reference to the Handler for Thread messages.
 		mHandler = handler;
-		selectNotesRunnable = new SelectNotes();
 	}
 
 	@Override
@@ -360,12 +406,14 @@ public class NoteDbHelper extends SQLiteOpenHelper {
         onCreate(db);
 	}
 	
-	public void findNotes() {
-		// Log.i("StackTrace", String.valueOf(new java.util.Date().getTime()));
-		// Log.e("StackTrace", Log.getStackTraceString(new Exception()));
+	/**
+	 * @param distanceInMeters If -1 no filtering will be applied.
+	 * @param currentLocation If null no filtering will be applied.
+	 */
+	public void findNotes(int distanceInMeters, LatLng currentLocation) {
 		// Create a new thread and start it. This will request the notes.
 		// The results will be returned when they are ready.
-		new Thread(selectNotesRunnable).start();
+		new Thread(new SelectNotes(distanceInMeters, currentLocation)).start();
 	}
 	
 	public void saveNote(Note note) {

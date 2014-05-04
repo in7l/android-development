@@ -33,8 +33,16 @@
         
     </ScrollView>
     
+    
+	<CheckBox
+        android:id="@+id/UseLocation"
+        android:text="@string/use_current_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:checked="true" />
+    
     <CheckBox
-        android:id="@+id/update_datetime"
+        android:id="@+id/UpdateDatetime"
         android:visibility="gone"
         android:text="@string/update_note_datetime"
         android:layout_width="match_parent"

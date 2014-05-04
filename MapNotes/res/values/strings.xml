@@ -24,5 +24,7 @@
     <string name="add_note">Add Note</string>
     <string name="save">Save</string>
     <string name="update_note_datetime">Update the edit time of this note</string>
+    <string name="current_position">Current position</string>
+    <string name="use_current_location">Save current location</string>
 
 </resources>

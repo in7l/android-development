@@ -1,5 +1,7 @@
 package fi.metropolia.intl.mapnotes;
 
+import fi.metropolia.intl.mapnotes.note.NoteListListener;
+import android.app.Activity;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +18,22 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 	public final static double DATE_SELECTOR_EXPONENT = 2.3546;
 	private TextView distanceTextView;
 	private SeekBar distanceSeekBar;
+	private DistanceSelectorListener mListener;
+	private int mDistance = -1;
+
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
+		// Attempt to save a reference to the activity
+		// which should implement DistanceSelectorListener.
+		try {
+			mListener = (DistanceSelectorListener)activity;
+		} catch (ClassCastException e) {
+			throw new ClassCastException(activity.toString()
+					+ " must implement DistanceSelectorListener");
+		}
+	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -29,6 +47,8 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 		distanceTextView = (TextView)v.findViewById(R.id.DistanceTextView);
 		// Update the initial distance.
 		setDistanceFromSeekBar(distanceSeekBar.getProgress());
+		// Notify the listener about the initial distance.
+		mListener.setDistance(mDistance);
 		
 		// Return the inflated layout.
 		return v;
@@ -54,6 +74,9 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 		}
 		
 		distanceTextView.setText(distanceRangeString);
+		
+		// Store the last displayed distance.
+		mDistance = distance;
 	}
 
 	@Override
@@ -68,9 +91,12 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 
 	@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
-		// TODO: Execute time-consuming business logic
+		// Execute time-consuming business logic
 		// once the user has stopped dragging the SeekBar.
-		Log.i("Map", "register changes");
+		Log.i("DistanceSelector", "register changes");
+		// Notify the DistanceSelectorListener
+		// that the distance has changed.
+		mListener.setDistance(mDistance);
 	}
 	
 	public int calculateProgressDistance(int progress) {

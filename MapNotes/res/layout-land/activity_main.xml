@@ -1,0 +1,56 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal"
+    android:baselineAligned="true">
+    
+    <LinearLayout
+	    android:layout_width="0dip"
+	    android:layout_height="fill_parent"
+	    android:layout_weight="1.0"
+	    android:orientation="vertical"
+	    android:background="@drawable/right_border" >
+	
+	    <fragment
+	        android:id="@+id/NoteListContainer"
+	        android:name="fi.metropolia.intl.mapnotes.note.NoteListFragment"
+	        android:layout_width="match_parent"
+	        android:layout_height="0dip"
+	        android:layout_weight="1.0"
+	        tools:layout="@layout/note_list" />
+	    
+	    <LinearLayout 
+	        android:orientation="horizontal"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:baselineAligned="false"
+	        android:paddingLeft="5dip"
+	        android:paddingRight="5dip"
+	        android:background="@drawable/top_border">
+	        
+	        <fragment
+		        android:id="@+id/DistanceSelectorContainer"
+		        android:name="fi.metropolia.intl.mapnotes.DistanceSelectorFragment"
+		        android:layout_width="0dip"
+		        android:layout_height="match_parent"
+		        android:layout_weight="1.0"
+		        tools:layout="@layout/distance_selector" />
+		    
+		    <fragment
+		        android:id="@+id/ToggleMapContainer"
+		        android:name="fi.metropolia.intl.mapnotes.map.ToggleMapFragment"
+		        android:layout_width="wrap_content"
+		        android:layout_height="match_parent"
+		        tools:layout="@layout/toggle_map" />
+		    
+	    </LinearLayout>
+    </LinearLayout>
+    
+	<FrameLayout
+		android:id="@+id/MapContainer"
+		android:visibility="gone"
+		android:layout_width="0dip"
+		android:layout_weight="1.0"
+		android:layout_height="match_parent" />
+</LinearLayout>

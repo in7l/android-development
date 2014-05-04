@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
+import android.R.integer;
+
 import com.google.android.gms.maps.model.LatLng;
 
 import fi.metropolia.intl.mapnotes.R;
@@ -22,7 +24,17 @@ public class Note implements Serializable {
 	private LatLng location = null;
 	private Date datetime;
 	private long databaseId;
+	boolean useCurrentLocation = false;
+	private float distanceToCurrentLocation = -1;
 	
+	public boolean usesCurrentLocation() {
+		return useCurrentLocation;
+	}
+
+	public void setUseCurrentLocation(boolean useCurrentLocation) {
+		this.useCurrentLocation = useCurrentLocation;
+	}
+
 	public long getDatabaseId() {
 		return databaseId;
 	}
@@ -162,5 +174,13 @@ public class Note implements Serializable {
 		}
 		
 		return noteIdValueMapList;
+	}
+
+	public float getDistanceToCurrentLocation() {
+		return distanceToCurrentLocation;
+	}
+
+	public void setDistanceToCurrentLocation(float distanceToCurrentLocation) {
+		this.distanceToCurrentLocation = distanceToCurrentLocation;
 	}
 }

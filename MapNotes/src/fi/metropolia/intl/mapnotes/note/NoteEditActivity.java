@@ -1,6 +1,7 @@
 package fi.metropolia.intl.mapnotes.note;
 
 import com.google.android.gms.internal.m;
+import com.google.android.gms.maps.model.LatLng;
 
 import fi.metropolia.intl.mapnotes.R;
 import android.app.Activity;
@@ -12,7 +13,7 @@ import android.util.Log;
 import android.view.MenuItem;
 
 public class NoteEditActivity extends Activity implements NoteEditListener {
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

@@ -3,37 +3,99 @@ package fi.metropolia.intl.mapnotes;
 import java.util.ArrayList;
 import java.util.Date;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMapOptions;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+
 import fi.metropolia.intl.mapnotes.db.NoteDbHelper;
 import fi.metropolia.intl.mapnotes.map.*;
 import fi.metropolia.intl.mapnotes.note.*;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.R.animator;
 import android.R.integer;
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
+import android.widget.Toast;
 
-public class MainActivity extends Activity implements ToggleMapListener, NoteListListener {
+public class MainActivity extends Activity implements ToggleMapListener,
+		NoteListListener, DistanceSelectorListener,
+		GooglePlayServicesClient.ConnectionCallbacks,
+		GooglePlayServicesClient.OnConnectionFailedListener,
+		LocationListener {
 	public static final int HANDLER_MESSAGE_FIND_NOTES = 0;
 	public static final int HANDLER_MESSAGE_SAVE_NOTE = 1;
 	public static final int HANDLER_MESSAGE_DELETE_NOTE = 2;
 	public static final int ACTIVITY_ADD_NOTE = 0;
 	public static final int ACTIVITY_EDIT_NOTE = 1;
+	public static final String CURRENT_LOCATION_BUNDLE_KEY = "current_location";
+	
+	// Milliseconds per second
+    private static final int MILLISECONDS_PER_SECOND = 1000;
+    // Update frequency in seconds
+    public static final int UPDATE_INTERVAL_IN_SECONDS = 15;
+    // Update frequency in milliseconds
+    private static final long UPDATE_INTERVAL =
+            MILLISECONDS_PER_SECOND * UPDATE_INTERVAL_IN_SECONDS;
+    // The fastest update frequency, in seconds
+    private static final int FASTEST_INTERVAL_IN_SECONDS = 5;
+    // A fast frequency ceiling in milliseconds
+    private static final long FASTEST_INTERVAL =
+            MILLISECONDS_PER_SECOND * FASTEST_INTERVAL_IN_SECONDS;
+	
+	/*
+     * Define a request code to send to Google Play services
+     * This code is returned in Activity.onActivityResult
+     */
+    private final static int
+            CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
 	
 	private NoteDbHelper dbHelper;
 	private FragmentManager fragmentManager;
+	private MapFragment mapFragment;
 	private View mapContainer;
 	private ArrayList<Note> notes = null;
 	private IdValueAdapter noteAdapter = null;
+	private GoogleMap mMap = null;
+	private LocationClient mLocationClient;
+	// Global variable to hold the current location
+    private LatLng mCurrentLocation;
+    // Define an object that holds accuracy and frequency parameters
+    private LocationRequest mLocationRequest;
+    private boolean mUpdatesRequested;
+    private SharedPreferences mPrefs;
+	private Editor mEditor;
+	private Circle noteRadiusCircle;
+	private int noteDistanceInMeters = -1;
 	
 	private Handler uiHandler = new Handler() {
 
@@ -79,7 +141,97 @@ public class MainActivity extends Activity implements ToggleMapListener, NoteLis
 		
 		// Create a SQLiteOpenHelper.
 		dbHelper = new NoteDbHelper(this, uiHandler);
+		
+		// Open the shared preferences
+        mPrefs = getSharedPreferences("SharedPreferences",
+                Context.MODE_PRIVATE);
+        // Get a SharedPreferences editor
+        mEditor = mPrefs.edit();
+		
+		// Things concerning location APIs.
+		
+		/*
+         * Create a new location client, using the enclosing class to
+         * handle callbacks.
+         */
+        mLocationClient = new LocationClient(this, this, this);
+        // Start with updates turned off
+        mUpdatesRequested = false;
+
+
+        // Create the LocationRequest object
+        mLocationRequest = LocationRequest.create();
+        // Use high accuracy
+        mLocationRequest.setPriority(
+                LocationRequest.PRIORITY_HIGH_ACCURACY);
+        // Set the update interval.
+        mLocationRequest.setInterval(UPDATE_INTERVAL);
+        // Set the fastest update interval.
+        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
+        
+        
 	}
+	
+
+	/*
+     * Called when the Activity becomes visible.
+     */
+	@Override
+	protected void onStart() {
+		super.onStart();
+        // Connect the client.
+        mLocationClient.connect();
+	}
+	
+	@Override
+    protected void onResume() {
+		super.onResume();
+        /*
+         * Get any previous setting for location updates
+         * Gets "false" if an error occurs
+         */
+        if (mPrefs.contains("KEY_UPDATES_ON")) {
+            mUpdatesRequested =
+                    mPrefs.getBoolean("KEY_UPDATES_ON", false);
+
+        // Otherwise, turn off location updates
+        } else {
+            mEditor.putBoolean("KEY_UPDATES_ON", false);
+            mEditor.commit();
+        }
+    }
+	
+	@Override
+    protected void onPause() {
+        // Save the current setting for updates
+        mEditor.putBoolean("KEY_UPDATES_ON", mUpdatesRequested);
+        mEditor.commit();
+        super.onPause();
+    }
+
+	
+	/*
+     * Called when the Activity is no longer visible.
+     */
+    @Override
+    protected void onStop() {
+    	// If the client is connected
+        if (mLocationClient.isConnected()) {
+            /*
+             * Remove location updates for a listener.
+             * The current Activity is the listener, so
+             * the argument is "this".
+             */
+            mLocationClient.removeLocationUpdates(this);
+        }
+        /*
+         * After disconnect() is called, the client is
+         * considered "dead".
+         */
+        mLocationClient.disconnect();
+        super.onStop();
+    }
+
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -114,59 +266,22 @@ public class MainActivity extends Activity implements ToggleMapListener, NoteLis
 					}
 				}
 				break;
-		}
-	}
-
-	@Override
-	public void showMap(boolean show) {
-		if (show) {
-			// The map should be shown.
-			Log.i("Map", "Show map");
-			
-			// Create the map fragment.
-			Fragment mapFragment = new MapFragment();
-			FragmentTransaction transaction = fragmentManager.beginTransaction();
-			// Set animation for the transaction.
-			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);
-			// Add the fragment to the MapContainer.
-			transaction.add(R.id.MapContainer, mapFragment);
-			// Commit the changes.
-			transaction.commit();
-			
-			// Update the height and weight of the mapContainer.
-			updateMapContainerProperties(show);
-		} else {
-			// The map should be hidden.
-			Log.i("Map", "Hide map");
-			FragmentTransaction transaction = fragmentManager.beginTransaction();
-			// Set animation for the transaction.
-			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);
-			// Remove the fragment from MapContainer.
-			transaction.remove(fragmentManager.findFragmentById(R.id.MapContainer));
-			transaction.commit();
-			// Update the height and weight of the mapContainer.
-			updateMapContainerProperties(show);
+			case CONNECTION_FAILURE_RESOLUTION_REQUEST:
+	            /*
+	             * If the result code is Activity.RESULT_OK, try
+	             * to connect again
+	             */
+                switch (resultCode) {
+                    case Activity.RESULT_OK :
+	                    /*
+	                     * Try the request again
+	                     */
+	                    break;
+                }
+	            break;
 		}
 	}
 	
-	private void updateMapContainerProperties(boolean showMap) {
-		if (mapContainer == null) {
-			// Get a reference to the MapContainer item in the main layout.
-			mapContainer = findViewById(R.id.MapContainer);
-		}
-		
-		if (showMap) {
-			// Set the layout weight of the MapContainer to 1.0.
-			mapContainer.setLayoutParams(
-					new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f));
-		} else {
-			// The mapContainer should be hidden.
-			// Set the MapContainer layout weight to 0.
-			mapContainer.setLayoutParams(
-					new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT,
-							LayoutParams.WRAP_CONTENT, 0f));
-		}
-	}
 	@Override
 	public void addNote() {
 		Log.i("Note", "Add note.");
@@ -210,18 +325,23 @@ public class MainActivity extends Activity implements ToggleMapListener, NoteLis
 	public void requestNoteListUpdate() {
 		// Request the list of notes to be updated.
 		// The results will be received when this is done.
-		dbHelper.findNotes();
+		dbHelper.findNotes(noteDistanceInMeters, mCurrentLocation);
 		Log.i("Note", "Requested findNotes() from dbHelper.");
 	}
 
 	/**
 	 * Saves a Note object to the database.
 	 */
-	public void persistNote(Note note) {
+	private void persistNote(Note note) {
+		// If the note should use the current location,
+		// then assign it to the object.
+		if (note.usesCurrentLocation()) {
+			note.setLocation(mCurrentLocation);
+		}
 		dbHelper.saveNote(note);
 	}
 	
-	public void updateNoteList() {
+	private void updateNoteList() {
 		Log.i("NoteList", "Updating note list.");
 		// Log.i("StackTrace", String.valueOf(new Date().getTime()));
 		// Log.e("StackTrace", Log.getStackTraceString(new Exception()));
@@ -229,5 +349,250 @@ public class MainActivity extends Activity implements ToggleMapListener, NoteLis
 			(NoteListFragment) fragmentManager.findFragmentById(
 				R.id.NoteListContainer);
 		noteListFragment.setNotes(notes);
+	}
+	
+	@Override
+	public void showMap(boolean show) {
+		if (show) {
+			// The map should be shown.
+			Log.i("Map", "Show map");
+			
+			// Create the map fragment.
+			if (mapFragment == null) {
+				GoogleMapOptions options = new GoogleMapOptions();
+	        	options.mapType(GoogleMap.MAP_TYPE_HYBRID)
+	        		.compassEnabled(false)
+	        		.rotateGesturesEnabled(false)
+	        		.tiltGesturesEnabled(false);
+				mapFragment = MapFragment.newInstance(options);
+			}
+			
+			FragmentTransaction transaction = fragmentManager.beginTransaction();
+			// Set animation for the transaction.
+			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);
+			// Add the fragment to the MapContainer.
+			transaction.add(R.id.MapContainer, mapFragment);
+			// Commit the changes.
+			transaction.commit();
+			// Execute the transaction immediately.
+			// This is needed so the GoogleMap object is instantiated.
+			fragmentManager.executePendingTransactions();
+			
+			// Update the mapContainer properties.
+			updateMapContainerProperties(show);
+			
+			setUpMapIfNeeded();
+			showCurrentLocationOnMap();
+		} else {
+			// The map should be hidden.
+			Log.i("Map", "Hide map");
+			FragmentTransaction transaction = fragmentManager.beginTransaction();
+			// Set animation for the transaction.
+			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);
+			// Remove the fragment from MapContainer.
+			transaction.remove(fragmentManager.findFragmentById(R.id.MapContainer));
+			transaction.commit();
+			// Update the height and weight of the mapContainer.
+			updateMapContainerProperties(show);
+			
+			// The map should be setup again next time the map fragment is shown.
+			mMap = null;
+		}
+	}
+	
+	private void updateMapContainerProperties(boolean showMap) {
+		if (mapContainer == null) {
+			// Get a reference to the MapContainer item in the main layout.
+			mapContainer = findViewById(R.id.MapContainer);
+		}
+		
+		// Adjust the MapContainer visibility.
+		if (showMap) {
+			mapContainer.setVisibility(View.VISIBLE);
+		} else {
+			mapContainer.setVisibility(View.GONE);
+		}
+	}
+	
+	private void setUpMapIfNeeded() {
+	    // Do a null check to confirm that we have not already instantiated the map.
+	    if (mMap == null && mapFragment != null) {
+	        mMap = mapFragment.getMap();
+	        // Check if we were successful in obtaining the map.
+	        if (mMap != null) {
+	            // The Map is verified. It is now safe to manipulate the map.
+	        }
+	    }
+	}
+	
+	private void showCurrentLocationOnMap() {
+		if (mMap != null && mCurrentLocation != null) {
+			
+			// Create a marker for the map showing the current location.
+			MarkerOptions markerOptions = new MarkerOptions();
+			markerOptions.position(mCurrentLocation);
+			markerOptions.title(getString(R.string.current_position));
+			// Change the marker color.
+			markerOptions.icon(
+					BitmapDescriptorFactory.defaultMarker(
+							BitmapDescriptorFactory.HUE_AZURE));
+			mMap.addMarker(markerOptions);
+			
+			// Add a circle.
+			CircleOptions circleOptions = new CircleOptions();
+			circleOptions.center(mCurrentLocation);
+			circleOptions.strokeColor(R.color.AliceBlue);
+			circleOptions.fillColor(R.color.Aqua);
+			noteRadiusCircle = mMap.addCircle(circleOptions);
+			// Adjust some properties of the circle depending on the current distance.
+			adjustMapCircle();
+			
+			// Zoom to the current location
+			CameraUpdate update = CameraUpdateFactory.newLatLngZoom(mCurrentLocation, 15);
+			mMap.animateCamera(update);
+		}
+	}
+	
+	
+	// Define a DialogFragment that displays the error dialog
+    public static class ErrorDialogFragment extends DialogFragment {
+        // Global field to contain the error dialog
+        private Dialog mDialog;
+        // Default constructor. Sets the dialog field to null
+        public ErrorDialogFragment() {
+            super();
+            mDialog = null;
+        }
+        // Set the dialog to display
+        public void setDialog(Dialog dialog) {
+            mDialog = dialog;
+        }
+        // Return a Dialog to the DialogFragment.
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return mDialog;
+        }
+    }
+    
+    
+    private boolean servicesConnected() {
+    	int errorCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
+    	if (errorCode != ConnectionResult.SUCCESS) {
+    	  GooglePlayServicesUtil.getErrorDialog(errorCode, this, 0).show();
+    	  return false;
+    	}
+    	
+    	return true;
+    }
+    
+    /*
+     * Called by Location Services when the request to connect the
+     * client finishes successfully. At this point, you can
+     * request the current location or start periodic updates
+     */
+    @Override
+    public void onConnected(Bundle dataBundle) {
+    	// Display the connection status
+        Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+        // If already requested, start periodic updates
+        if (mUpdatesRequested) {
+            mLocationClient.requestLocationUpdates(mLocationRequest, this);
+        }
+        Location currentLocation = mLocationClient.getLastLocation();
+        mCurrentLocation = new LatLng(
+				currentLocation.getLatitude(),
+				currentLocation.getLongitude());
+        printCurrentLocation();
+        // Refresh the list of notes.
+        requestNoteListUpdate();
+    }
+    
+    /*
+     * Called by Location Services if the connection to the
+     * location client drops because of an error.
+     */
+    @Override
+    public void onDisconnected() {
+        // Display the connection status
+        Toast.makeText(this, "Disconnected. Please re-connect.",
+                Toast.LENGTH_SHORT).show();
+    }
+    
+    /*
+     * Called by Location Services if the attempt to
+     * Location Services fails.
+     */
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        /*
+         * Google Play services can resolve some errors it detects.
+         * If the error has a resolution, try sending an Intent to
+         * start a Google Play services activity that can resolve
+         * error.
+         */
+        if (connectionResult.hasResolution()) {
+            try {
+                // Start an Activity that tries to resolve the error
+                connectionResult.startResolutionForResult(
+                        this,
+                        CONNECTION_FAILURE_RESOLUTION_REQUEST);
+                /*
+                 * Thrown if Google Play services canceled the original
+                 * PendingIntent
+                 */
+            } catch (IntentSender.SendIntentException e) {
+                // Log the error
+                e.printStackTrace();
+            }
+        } else {
+            /*
+             * If no resolution is available, display a dialog to the
+             * user with the error.
+             */
+        	// TODO: fix this
+            // showErrorDialog(connectionResult.getErrorCode());
+        }
+    }
+    
+    // Define the callback method that receives location updates
+    @Override
+    public void onLocationChanged(Location location) {
+    	Location currentLocation = location;
+        mCurrentLocation = new LatLng(
+				currentLocation.getLatitude(),
+				currentLocation.getLongitude());
+        // Report to the UI that the location was updated
+        printCurrentLocation();
+    }
+    
+    public void printCurrentLocation() {
+    	String msg = "Updated Location: " +
+                Double.toString(mCurrentLocation.latitude) + "," +
+                Double.toString(mCurrentLocation.longitude);
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+
+	@Override
+	public void setDistance(int distanceInMeters) {
+		noteDistanceInMeters = distanceInMeters;
+		adjustMapCircle();
+	}
+
+	private void adjustMapCircle() {
+		// If the circle exists, it can be adjusted.
+		if (noteRadiusCircle != null) {
+			// If the distance is not -1 (marking infinity).
+			if (noteDistanceInMeters != -1) {
+				// Show the circle.
+				noteRadiusCircle.setVisible(true);
+				noteRadiusCircle.setRadius(noteDistanceInMeters);
+			}
+			else {
+				// Hide the circle.
+				noteRadiusCircle.setVisible(false);
+			}
+		}		
+	
 	}
 }
