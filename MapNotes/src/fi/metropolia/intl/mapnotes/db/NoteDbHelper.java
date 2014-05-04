@@ -5,17 +5,21 @@ import java.util.ArrayList;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import fi.metropolia.intl.mapnotes.MainActivity;
 import fi.metropolia.intl.mapnotes.db.NoteContract.*;
 import fi.metropolia.intl.mapnotes.note.Note;
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.location.Location;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
 
 public class NoteDbHelper extends SQLiteOpenHelper {
-	private SelectNotes selectNotesRunnable = new SelectNotes();
 
 	// If you change the database schema, you must increment the database version.
 	public static final int DATABASE_VERSION = 1;
@@ -44,7 +48,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
     	"CREATE TABLE " + LocationEntry.TABLE_NAME + " (" +
 		LocationEntry._ID + INTEGER_TYPE + " PRIMARY KEY" + COMMA_SEP +
 		LocationEntry.COLUMN_NAME_LOCATION_X + INTEGER_TYPE + COMMA_SEP +
-		LocationEntry.COLUMN_NAME_LOCATION_Y + INTEGER_TYPE + COMMA_SEP +
+		LocationEntry.COLUMN_NAME_LOCATION_Y + INTEGER_TYPE +
 		" )";
     
     // SQL for deleting Location table.
@@ -57,21 +61,32 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 
 		@Override
 		public void run() {
-			if (db == null) {
-				// Open readable database.
-				db = getReadableDatabase();
-			}
-			
-			findNotes();
-			
-			if (db != null) {
-				// Close the database object.
-				db.close();
-				db = null;
+			try {
+				if (db == null) {
+					// Open readable database.
+					db = getReadableDatabase();
+				}
+				
+				ArrayList<Note> notes = findNotes();
+				// Obtain a message from the UI Handler.
+				Message message = mHandler.obtainMessage(MainActivity.HANDLER_MESSAGE_FIND_NOTES);
+				message.obj = notes;
+				// Send the message to the main thread.
+				mHandler.sendMessage(message);
+			} catch (Exception e) {
+				Log.e("DB", "Unable to SelectNotes. " +
+						e.getMessage());
+			} finally {
+				// If a database connection was successfully opened.
+				if (db != null) {
+					// Close the database object.
+					db.close();
+					db = null;
+				}
 			}
 		}
 		
-		public ArrayList<Note> findNotes() {
+		private ArrayList<Note> findNotes() {
 			ArrayList<Note> notes = new ArrayList<Note>();
 			
 			// Create a querybuilder. Needed for joining two tables.
@@ -83,7 +98,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			
 			// List of columns that are needed from the database.
 			String[] projection = {
-				NoteEntry._ID,
+				NoteEntry.COLUMN_FULL_ID,
 				NoteEntry.COLUMN_NAME_SUMMARY,
 				NoteEntry.COLUMN_NAME_DESCRIPTION,
 				NoteEntry.COLUMN_NAME_DATETIME_TIMESTAMP,
@@ -123,6 +138,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				double locationX = -1;
 				double locationY = -1;
 				LatLng location = null;
+				long databaseId = -1;
 				
 				// Get summary.
 				int summaryIndex = cursor.getColumnIndexOrThrow(
@@ -142,7 +158,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				int datetimeTsIndex = cursor.getColumnIndexOrThrow(
 					NoteEntry.COLUMN_NAME_DATETIME_TIMESTAMP);
 				if (cursor.getType(datetimeTsIndex) != Cursor.FIELD_TYPE_NULL) {
-					datetimeTimestamp = cursor.getInt(datetimeTsIndex);
+					datetimeTimestamp = cursor.getLong(datetimeTsIndex);
 					datetime = new Date(datetimeTimestamp);
 				}
 				
@@ -162,8 +178,14 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					location = new LatLng(locationX, locationY);
 				}
 				
+				// Get Note database id.
+				int databaseIdIndex = cursor.getColumnIndexOrThrow(NoteEntry._ID);
+				if (cursor.getType(databaseIdIndex) != Cursor.FIELD_TYPE_NULL) {
+					databaseId = cursor.getLong(databaseIdIndex);
+				}
 				// Create a Note object.
-				Note note = new Note(description, location, datetime, summary);
+				Note note = new Note(description, location, datetime,
+						summary, databaseId);
 				// Add it to the resulting array list of Notes.
 				notes.add(note);
 				
@@ -174,9 +196,153 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			return notes;
 		}
     }
+    
+    private class SaveNote implements Runnable {
+    	private SQLiteDatabase db = null;
+    	private Note note;
+    	
+    	public SaveNote(Note note) {
+    		// Store a reference to the note to be saved.
+    		this.note = note;
+    	}
+
+		@Override
+		public void run() {
+			try {
+				if (db == null) {
+					// Open writable database.
+					db = getWritableDatabase();
+				}
+				
+				boolean success = saveNoteToDatabase();
+				// If the note was saved successfully.
+				if (success) {
+					// Obtain a message from the UI Handler.
+					Message message = mHandler.obtainMessage(MainActivity.HANDLER_MESSAGE_SAVE_NOTE);
+					message.obj = note;
+					// Send the message to the main thread.
+					mHandler.sendMessage(message);
+				}
+			} catch (Exception e) {
+				Log.e("DB", "Unable to SaveNote. " +
+						e.getMessage());
+			} finally {
+				// If a database connection was successfully opened.
+				if (db != null) {
+					// Close the database object.
+					db.close();
+					db = null;
+				}
+			}
+		}
+		
+		private boolean saveNoteToDatabase() {
+			// Create a new map of values, where column names are the keys
+			ContentValues values = new ContentValues();
+			values.put(NoteEntry.COLUMN_NAME_SUMMARY, note.getSummary());
+			values.put(NoteEntry.COLUMN_NAME_DESCRIPTION, note.getDescription());
+			values.put(NoteEntry.COLUMN_NAME_DATETIME_TIMESTAMP, note.getDatetimeTimestamp());
+			
+			long databaseId = note.getDatabaseId();
+			// If this is an old Note.
+			if (databaseId != -1) {
+				// Update the row in the database, instead of creating a new one.
+				String selection = NoteEntry._ID + " = ?";
+				String selectionArgs[] = { String.valueOf(databaseId) };
+				
+				int count = db.update(NoteEntry.TABLE_NAME, values, selection, selectionArgs);
+				if (count > 0) {
+					Log.i("DB", "Updated note with id " + databaseId);
+					return true;
+				} else {
+					Log.e("DB", "Failed to update note with id " + databaseId);
+					return false;
+				}
+			} else {
+				// This is a new Note.
+				// Insert the new row, returning the primary key value of the new row
+				long newRowId;
+				newRowId = db.insert(NoteEntry.TABLE_NAME, null, values);
+				
+				if (newRowId != -1) {
+					// Assign the databaseId to the Note object.
+					note.setDatabaseId(newRowId);
+					Log.i("DB", "Saved note with id " + note.getDatabaseId());
+					return true;
+				}
+				else {
+					Log.e("DB", "Failed to save a note.");
+					return false;	
+				}
+			}
+		}
+    }
+    
+    private class DeleteNote implements Runnable {
+    	private SQLiteDatabase db = null;
+    	private long databaseId;
+    	
+    	public DeleteNote(long noteDatabaseId) {
+    		// Store the database id of the note to be deleted.
+    		databaseId = noteDatabaseId;
+    	}
+
+		@Override
+		public void run() {
+			try {
+				if (db == null) {
+					// Open writable database.
+					db = getWritableDatabase();
+				}
+				
+				boolean success = deleteNoteFromDatabase();
+				// If the note was deleted successfully.
+				if (success) {
+					// Obtain a message from the UI Handler.
+					Message message = mHandler.obtainMessage(MainActivity.HANDLER_MESSAGE_DELETE_NOTE);
+					message.obj = new Long(databaseId);
+					// Send the message to the main thread.
+					mHandler.sendMessage(message);
+				}
+			} catch (Exception e) {
+				Log.e("DB", "Unable to DeleteNote. " +
+						e.getMessage());
+			} finally {
+				// If a database connection was successfully opened.
+				if (db != null) {
+					// Close the database object.
+					db.close();
+					db = null;
+				}
+			}
+		}
+		
+		private boolean deleteNoteFromDatabase() {
+			// Attempt to delete this Note's row from the database.
+			String selection = NoteEntry._ID + " = ?";
+			String selectionArgs[] = { String.valueOf(databaseId) };
+			
+			int count =db.delete(NoteEntry.TABLE_NAME, selection, selectionArgs);
+			
+			if (count > 0) {
+				// Some row was deleted.
+				Log.i("DB", "Deleted note with id " + databaseId);
+				return true;
+			} else {
+				Log.e("DB", "Failed to delete note with id " + databaseId);
+				return false;
+			}
+		}
+    }
+    
+    private SelectNotes selectNotesRunnable;
+    private Handler mHandler;
 	
-	public NoteDbHelper(Context context) {
+	public NoteDbHelper(Context context, Handler handler) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
+		// Store a reference to the Handler for Thread messages.
+		mHandler = handler;
+		selectNotesRunnable = new SelectNotes();
 	}
 
 	@Override
@@ -195,8 +361,21 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 	}
 	
 	public void findNotes() {
+		// Log.i("StackTrace", String.valueOf(new java.util.Date().getTime()));
+		// Log.e("StackTrace", Log.getStackTraceString(new Exception()));
 		// Create a new thread and start it. This will request the notes.
 		// The results will be returned when they are ready.
 		new Thread(selectNotesRunnable).start();
+	}
+	
+	public void saveNote(Note note) {
+		// Start a new thread for saving the Note to database.
+		new Thread(new SaveNote(note)).start();
+	}
+	
+	public void deleteNote(long databaseId) {
+		// Start a new thread that will attempt to delete the note with
+		// the specified id from the database.
+		new Thread(new DeleteNote(databaseId)).start();
 	}
 }

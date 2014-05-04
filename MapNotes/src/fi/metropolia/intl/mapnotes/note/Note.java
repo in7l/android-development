@@ -21,7 +21,16 @@ public class Note implements Serializable {
 	private String description = null;
 	private LatLng location = null;
 	private Date datetime;
+	private long databaseId;
 	
+	public long getDatabaseId() {
+		return databaseId;
+	}
+
+	public void setDatabaseId(long databaseId) {
+		this.databaseId = databaseId;
+	}
+
 	/* Constructors */
 	public Note() {
 		this(null);	
@@ -38,9 +47,14 @@ public class Note implements Serializable {
 	public Note(String description, LatLng location, Date datetime) {
 		this(description, location, datetime, null);
 	}
-
+	
 	public Note(String description, LatLng location,
 			Date datetime, String summary) {
+		this(description, location, datetime, summary, -1);
+	}
+
+	public Note(String description, LatLng location,
+			Date datetime, String summary, long databaseId) {
 		this.summary = summary;
 		this.description = description;
 		this.location = location;
@@ -48,8 +62,41 @@ public class Note implements Serializable {
 			datetime = new Date();
 		}
 		this.datetime = datetime;
+		this.databaseId = databaseId;
 	}
 	
+	public String getSummary() {
+		return summary;
+	}
+
+	public void setSummary(String summary) {
+		this.summary = summary;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public LatLng getLocation() {
+		return location;
+	}
+
+	public void setLocation(LatLng location) {
+		this.location = location;
+	}
+
+	public Date getDatetime() {
+		return datetime;
+	}
+
+	public void setDatetime(Date datetime) {
+		this.datetime = datetime;
+	}
+
 	/**
 	 * @return Map<Integer, String> where the key is an id for a View
 	 * such as TextView and the String is the value that should be
@@ -81,9 +128,22 @@ public class Note implements Serializable {
 	}
 	
 	public String getDatetimeString() {
+		if (datetime == null) {
+			return null;
+		}
+
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
 		String datetimeString = sdf.format(datetime);
 		return datetimeString;
+	}
+	
+	public long getDatetimeTimestamp() {
+		if (datetime == null) {
+			return 0;
+		}
+		
+		long timestamp = datetime.getTime();
+		return timestamp;
 	}
 	
 	public String getDistanceString() {

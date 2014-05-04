@@ -1,6 +1,7 @@
 package fi.metropolia.intl.mapnotes.note;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import fi.metropolia.intl.mapnotes.IdValueAdapter;
 import fi.metropolia.intl.mapnotes.R;
@@ -28,16 +29,19 @@ import android.widget.AdapterView.OnItemLongClickListener;
 public class NoteListFragment extends ListFragment implements OnItemLongClickListener,
 		NoteListActionModeCallbackListener {
 	private NoteListListener mListener;
-	private ArrayList<Note> notes;
+	private ArrayList<Note> notes = null;
 	private ActionMode.Callback mActionModeCallback = new NoteListActionModeCallback(this);
 	private ActionMode mActionMode = null;
 	private int actionModeItemIndex = -1;
+	IdValueAdapter noteAdapter = null;
 	
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		
-		getListView().setChoiceMode(ListView.CHOICE_MODE_NONE);
+		// Request from the activity to update the list of notes.
+		mListener.requestNoteListUpdate();
+
 		// Set the background color of the selected item.
 		getListView().setSelector(R.color.Beige);
 		
@@ -50,18 +54,20 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 		super.onAttach(activity);
 		
 		// Attempt to save a reference to the activity
-		// which should implement NoteListener.
+		// which should implement NoteListListener.
 		try {
 			mListener = (NoteListListener)activity;
 		} catch (ClassCastException e) {
 			throw new ClassCastException(activity.toString()
-					+ " must implement NoteListener");
+					+ " must implement NoteListListener");
 		}
 	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
+		// This fragment has an options menu (action bar).
+		setHasOptionsMenu(true);
 		// Inflate the note_list layout used by this fragment and return it.
 		return inflater.inflate(R.layout.note_list, container, false);
 	}
@@ -70,20 +76,34 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		// Create an ArrayList of Note objects.
+		// Create an empty list of notes.
 		notes = new ArrayList<Note>();
 		
-		String longDescription = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed interdum volutpat purus a vulputate. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin vulputate interdum tortor, a pulvinar massa malesuada a. Sed egestas mauris nunc, vel varius nisl sagittis eu. In elementum scelerisque tellus, ut sodales metus pharetra sed. Sed lorem nisl, mollis et commodo et, congue eget est. Aliquam commodo ultricies rhoncus. Ut lacus metus, rutrum hendrerit euismod tristique, pellentesque in urna. Vivamus dignissim, eros ac feugiat dictum, neque metus tempus felis, a pretium ligula quam sit amet dui. Nullam congue lorem vitae metus adipiscing consectetur.\n\nPhasellus in laoreet purus. Nunc ac dignissim mauris. Proin pharetra ipsum sed nunc venenatis elementum. Nunc luctus cursus sem ac condimentum. Proin et ante auctor, cursus libero sit amet, molestie nisl. Proin ac faucibus orci. Aenean lacinia erat tristique, tristique sapien ac, facilisis diam. Sed molestie justo a varius condimentum. In dapibus lacus in tincidunt luctus. In at dui id ante dignissim consequat ac in nulla. Pellentesque in augue ac odio malesuada accumsan. Proin elementum velit in mattis bibendum. Nam vitae imperdiet neque. Nulla eu purus velit.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed interdum volutpat purus a vulputate. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin vulputate interdum tortor, a pulvinar massa malesuada a. Sed egestas mauris nunc, vel varius nisl sagittis eu. In elementum scelerisque tellus, ut sodales metus pharetra sed. Sed lorem nisl, mollis et commodo et, congue eget est. Aliquam commodo ultricies rhoncus. Ut lacus metus, rutrum hendrerit euismod tristique, pellentesque in urna. Vivamus dignissim, eros ac feugiat dictum, neque metus tempus felis, a pretium ligula quam sit amet dui. Nullam congue lorem vitae metus adipiscing consectetur.\n\nPhasellus in laoreet purus. Nunc ac dignissim mauris. Proin pharetra ipsum sed nunc venenatis elementum. Nunc luctus cursus sem ac condimentum. Proin et ante auctor, cursus libero sit amet, molestie nisl. Proin ac faucibus orci. Aenean lacinia erat tristique, tristique sapien ac, facilisis diam. Sed molestie justo a varius condimentum. In dapibus lacus in tincidunt luctus. In at dui id ante dignissim consequat ac in nulla. Pellentesque in augue ac odio malesuada accumsan. Proin elementum velit in mattis bibendum. Nam vitae imperdiet neque. Nulla eu purus velit.";
-		
-		// Add a few test notes.
-		notes.add(new Note(longDescription, null, null, "Summary1"));
-		notes.add(new Note("Descr2", null, null, "Summary2"));
-		notes.add(new Note("Descr3", null, null, null));
-		
 		// Create an adapter for filling in the note elements in the list.
-		IdValueAdapter noteAdapter = new IdValueAdapter(getActivity(),
+		noteAdapter = new IdValueAdapter(getActivity(),
 				R.layout.note_collapsed, Note.getNoteListAsIdValueMap(notes));
 		setListAdapter(noteAdapter);
+	}
+	
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+		inflater.inflate(R.menu.note_list_menu, menu);
+		super.onCreateOptionsMenu(menu, inflater);
+	}
+	
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.add:
+				mListener.addNote();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
 	}
 
 	@Override
@@ -148,6 +168,34 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 	@Override
 	public void destroyActionMode() {
 		mActionMode = null;
+	}
+	
+	public void setNotes(ArrayList<Note> n) {
+		Log.i("NoteList", "Setting " + n.size() + " notes.");
+		notes = n;
+		// Generate the ListView adapter data in another thread,
+		// as that might be quite resource-consuming.
+		(new Thread() {
+			@Override
+			public void run() {
+				// Get an IdValueMap of the notes.
+				final ArrayList<Map<Integer, String>> idValueMap = Note.getNoteListAsIdValueMap(notes);
+				
+				// Once creating the IdValueMap is done,
+				// do the changes on the UI thread.
+				getActivity().runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						// Notify about data change only once.
+						noteAdapter.setNotifyOnChange(false);
+						noteAdapter.clear();
+						noteAdapter.addAll(idValueMap);
+						noteAdapter.notifyDataSetChanged();
+						Log.i("NoteList", "Setting notes done.");
+					}
+				});
+			}
+		}).start();
 	}
 	
 }

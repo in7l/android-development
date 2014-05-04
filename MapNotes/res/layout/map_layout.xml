@@ -4,11 +4,18 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
 
+    <!--
     <TextView
         android:id="@+id/textView1"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
         android:text="@string/map_placeholder" />
+    -->
+    <fragment
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:name="com.google.android.gms.maps.MapFragment" />
 
 </LinearLayout>
