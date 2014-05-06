@@ -21,11 +21,15 @@ public class Note implements Serializable {
 	public final static String NOTE_BUNDLE_KEY = "note";
 	private String summary = null;
 	private String description = null;
-	private LatLng location = null;
+	// The Note needs to be serializable and LatLng is not.
+	// That is why the location is stored in two double variables.
+	private double locationX = -1;
+	private double locationY = -1;
 	private Date datetime;
 	private long databaseId;
+	private long locationDatabaseId;
 	boolean useCurrentLocation = false;
-	private float distanceToCurrentLocation = -1;
+	private int distanceToCurrentLocation = -1;
 	
 	public boolean usesCurrentLocation() {
 		return useCurrentLocation;
@@ -67,14 +71,25 @@ public class Note implements Serializable {
 
 	public Note(String description, LatLng location,
 			Date datetime, String summary, long databaseId) {
+		this(description, location, datetime, summary, databaseId, -1);	
+	}
+	
+	public Note(String description, LatLng location,
+			Date datetime, String summary, long databaseId,
+			long locationDatabaseId) {
+		
 		this.summary = summary;
 		this.description = description;
-		this.location = location;
+		if (location != null) {
+			this.locationX = location.latitude;
+			this.locationY = location.longitude;
+		}
 		if (datetime == null) {
 			datetime = new Date();
 		}
 		this.datetime = datetime;
 		this.databaseId = databaseId;
+		this.locationDatabaseId = locationDatabaseId;
 	}
 	
 	public String getSummary() {
@@ -94,11 +109,22 @@ public class Note implements Serializable {
 	}
 
 	public LatLng getLocation() {
+		LatLng location = null;
+		if (locationX != -1 && locationY != -1) {
+			location = new LatLng(locationX, locationY);
+		}
 		return location;
 	}
 
 	public void setLocation(LatLng location) {
-		this.location = location;
+		if (location == null) {
+			this.locationX = -1;
+			this.locationY = -1;
+		}
+		else {
+			this.locationX = location.latitude;
+			this.locationY = location.longitude;
+		}
 	}
 
 	public Date getDatetime() {
@@ -122,7 +148,7 @@ public class Note implements Serializable {
 		idValueMap.put(R.id.note_summary, getSummaryString());
 		idValueMap.put(R.id.note_description, getDescriptionString());
 		idValueMap.put(R.id.note_datetime, getDatetimeString());
-		idValueMap.put(R.id.note_distance, getDistanceString());
+		idValueMap.put(R.id.note_distance, getDistanceToCurrentLocationString());
 		 
 		return idValueMap;
 	}
@@ -158,10 +184,6 @@ public class Note implements Serializable {
 		return timestamp;
 	}
 	
-	public String getDistanceString() {
-		return "< 20m";
-	}
-	
 	/**
 	 * Creates a new ArrayList holding viewId - textValue pair map
 	 * from an ArrayList of Note objects
@@ -176,11 +198,42 @@ public class Note implements Serializable {
 		return noteIdValueMapList;
 	}
 
-	public float getDistanceToCurrentLocation() {
+	public int getDistanceToCurrentLocation() {
 		return distanceToCurrentLocation;
+	}
+	
+	public String getDistanceToCurrentLocationString() {
+		String metric = "m";
+		String distanceString = String.valueOf(distanceToCurrentLocation);
+		
+		// If the distance is more at least 1km
+		// some different notation will be used.s
+		if (distanceToCurrentLocation >= 1000) {
+			metric = "km";
+			double distanceInKm = distanceToCurrentLocation / 1000.0;
+			distanceString = String.format("%.1f", distanceInKm);
+		}
+		String distanceRangeString = "< " + distanceString + metric;
+		
+		if (distanceToCurrentLocation < 0) {
+			// Negative distance signifies infinity,
+			// i.e. no distance defined.
+			distanceRangeString = "N/A";
+		}
+		
+		return distanceRangeString;
 	}
 
 	public void setDistanceToCurrentLocation(float distanceToCurrentLocation) {
-		this.distanceToCurrentLocation = distanceToCurrentLocation;
+		// Round up the distance to the current location.
+		this.distanceToCurrentLocation = (int) Math.ceil(distanceToCurrentLocation);
+	}
+
+	public long getLocationDatabaseId() {
+		return locationDatabaseId;
+	}
+
+	public void setLocationDatabaseId(long locationDatabaseId) {
+		this.locationDatabaseId = locationDatabaseId;
 	}
 }

@@ -112,7 +112,13 @@ public class NoteEditFragment extends Fragment {
 	public void saveNoteFromViews() {
 		// Gather information from the Views.
 		String summary = summaryEditText.getText().toString();
+		if (summary.isEmpty()) {
+			summary = null;
+		}
 		String description = descriptionEditText.getText().toString();
+		if (description.isEmpty()) {
+			description = null;
+		}
 		// Check if the user marked that the current location
 		// should be used for this note.
 		boolean useCurrentLocation = saveCurrentLocationCheckBox.isChecked();

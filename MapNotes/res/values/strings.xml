@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">MapNotes</string>
+    <string name="app_name">Map-based Notes</string>
     <string name="action_settings">Settings</string>
     <string name="note_summary_placeholder">Note summary</string>
     <string name="note_description_placeholder">Note description</string>
@@ -26,5 +26,6 @@
     <string name="update_note_datetime">Update the edit time of this note</string>
     <string name="current_position">Current position</string>
     <string name="use_current_location">Save current location</string>
+    <string name="current_location_not_saved">The current location could not be retrieved. The note has been saved without location.</string>
 
 </resources>

@@ -2,7 +2,11 @@ package fi.metropolia.intl.mapnotes;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import com.google.android.gms.ads.a;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -12,12 +16,14 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import fi.metropolia.intl.mapnotes.db.NoteDbHelper;
@@ -51,7 +57,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 		NoteListListener, DistanceSelectorListener,
 		GooglePlayServicesClient.ConnectionCallbacks,
 		GooglePlayServicesClient.OnConnectionFailedListener,
-		LocationListener {
+		LocationListener, OnInfoWindowClickListener {
 	public static final int HANDLER_MESSAGE_FIND_NOTES = 0;
 	public static final int HANDLER_MESSAGE_SAVE_NOTE = 1;
 	public static final int HANDLER_MESSAGE_DELETE_NOTE = 2;
@@ -95,6 +101,8 @@ public class MainActivity extends Activity implements ToggleMapListener,
     private SharedPreferences mPrefs;
 	private Editor mEditor;
 	private Circle noteRadiusCircle;
+	// A map that holds map markers and their corresponding notes.
+	private Map<Marker, Note> mapMarkers;
 	private int noteDistanceInMeters = -1;
 	
 	private Handler uiHandler = new Handler() {
@@ -108,6 +116,8 @@ public class MainActivity extends Activity implements ToggleMapListener,
 					Log.i("Note", "Found " + notes.size() + " notes.");
 					// Update the data in the ListView.
 					updateNoteList();
+					// Adjust the notes displayed on the map.
+					adjustMapNotes();
 					break;
 				case HANDLER_MESSAGE_SAVE_NOTE:
 					// A note has been saved to the database.
@@ -323,10 +333,12 @@ public class MainActivity extends Activity implements ToggleMapListener,
 
 	@Override
 	public void requestNoteListUpdate() {
-		// Request the list of notes to be updated.
-		// The results will be received when this is done.
-		dbHelper.findNotes(noteDistanceInMeters, mCurrentLocation);
-		Log.i("Note", "Requested findNotes() from dbHelper.");
+		if (dbHelper != null) {
+			// Request the list of notes to be updated.
+			// The results will be received when this is done.
+			dbHelper.findNotes(noteDistanceInMeters, mCurrentLocation);
+			Log.i("Note", "Requested findNotes() from dbHelper.");
+		}
 	}
 
 	/**
@@ -336,7 +348,13 @@ public class MainActivity extends Activity implements ToggleMapListener,
 		// If the note should use the current location,
 		// then assign it to the object.
 		if (note.usesCurrentLocation()) {
-			note.setLocation(mCurrentLocation);
+			if (mCurrentLocation != null) {
+				note.setLocation(mCurrentLocation);
+			}
+			else {
+				Toast.makeText(this, R.string.current_location_not_saved,
+						Toast.LENGTH_LONG).show();
+			}
 		}
 		dbHelper.saveNote(note);
 	}
@@ -397,6 +415,9 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			
 			// The map should be setup again next time the map fragment is shown.
 			mMap = null;
+			// Clear also other data that was displayed on the map.
+			noteRadiusCircle = null;
+			mapMarkers = null;
 		}
 	}
 	
@@ -421,12 +442,16 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	        // Check if we were successful in obtaining the map.
 	        if (mMap != null) {
 	            // The Map is verified. It is now safe to manipulate the map.
+	        	mMap.setOnInfoWindowClickListener(this);
 	        }
 	    }
 	}
 	
 	private void showCurrentLocationOnMap() {
 		if (mMap != null && mCurrentLocation != null) {
+			// Zoom to the current location
+			CameraUpdate update = CameraUpdateFactory.newLatLngZoom(mCurrentLocation, 15);
+			mMap.animateCamera(update);
 			
 			// Create a marker for the map showing the current location.
 			MarkerOptions markerOptions = new MarkerOptions();
@@ -436,7 +461,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			markerOptions.icon(
 					BitmapDescriptorFactory.defaultMarker(
 							BitmapDescriptorFactory.HUE_AZURE));
-			mMap.addMarker(markerOptions);
+			mMap.addMarker(markerOptions).showInfoWindow();
 			
 			// Add a circle.
 			CircleOptions circleOptions = new CircleOptions();
@@ -446,10 +471,8 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			noteRadiusCircle = mMap.addCircle(circleOptions);
 			// Adjust some properties of the circle depending on the current distance.
 			adjustMapCircle();
-			
-			// Zoom to the current location
-			CameraUpdate update = CameraUpdateFactory.newLatLngZoom(mCurrentLocation, 15);
-			mMap.animateCamera(update);
+			mapMarkers = new HashMap<Marker, Note>();
+			adjustMapNotes();
 		}
 	}
 	
@@ -499,12 +522,14 @@ public class MainActivity extends Activity implements ToggleMapListener,
             mLocationClient.requestLocationUpdates(mLocationRequest, this);
         }
         Location currentLocation = mLocationClient.getLastLocation();
-        mCurrentLocation = new LatLng(
+        if (currentLocation != null) {
+        	mCurrentLocation = new LatLng(
 				currentLocation.getLatitude(),
 				currentLocation.getLongitude());
-        printCurrentLocation();
-        // Refresh the list of notes.
-        requestNoteListUpdate();
+            printCurrentLocation();
+            // Refresh the list of notes.
+            requestNoteListUpdate();
+        }
     }
     
     /*
@@ -577,6 +602,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	public void setDistance(int distanceInMeters) {
 		noteDistanceInMeters = distanceInMeters;
 		adjustMapCircle();
+		requestNoteListUpdate();
 	}
 
 	private void adjustMapCircle() {
@@ -594,5 +620,76 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			}
 		}		
 	
+	}
+	
+	private void adjustMapNotes() {
+		if (mapMarkers != null) {
+			// Remove all the current markers from the map.
+			for (Entry<Marker, Note> mapMarkerNoteEntry : mapMarkers.entrySet()) {
+				Marker marker = mapMarkerNoteEntry.getKey();
+				marker.remove();
+			}
+			
+			// Clear the map of Marker-Note pairs.
+			mapMarkers.clear();
+			
+			// If there are some notes to be displayed.
+			if (notes != null && notes.size() > 0) {
+				// Create new markers from the current notes.
+				for (Note note : notes) {
+					// Get the location of this note.
+					LatLng noteLocation = note.getLocation();
+					if (noteLocation == null) {
+						// This Note does not specify a location.
+						// It cannot be displayed on the map.
+						continue;
+					}
+					
+					MarkerOptions markerOptions = new MarkerOptions();
+					markerOptions.position(noteLocation);
+					String markerTitle = null;
+					// If the note has a summary, display it as the marker title.
+					if (note.getSummary() != null) {
+						markerTitle = note.getSummaryString();
+					}
+					// If the note specifies a description, get the first few letters of it.
+					else if (note.getDescription() != null) {
+						String noteDescription = note.getDescriptionString();
+						int substrLength = 20;
+						if (noteDescription.length() < substrLength) {
+							substrLength = noteDescription.length();
+						}
+						markerTitle = noteDescription.substring(0, substrLength) +
+								"..."; 
+					}
+					// Set the marker title if any.
+					if (markerTitle != null) {
+						markerOptions.title(markerTitle);
+					}
+					
+					// Add the marker to the map.
+					Marker marker = mMap.addMarker(markerOptions);
+					
+					// Add the marker to the array list of mapMarkers.
+					// In this way it can be removed from the map later on if needed.
+					// Also store its corresponding Note object.
+					mapMarkers.put(marker, note);
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Called when the map markers popups are clicked.
+	 */
+	@Override
+	public void onInfoWindowClick(Marker marker) {
+		// Attempt to get the note that corresponds to this marker.
+		Note note = mapMarkers.get(marker);
+		if (note != null) {
+			// Found the note. Open it.
+			openNote(note);
+		}
 	}
 }
