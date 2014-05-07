@@ -80,7 +80,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
     private static final long UPDATE_INTERVAL =
             MILLISECONDS_PER_SECOND * UPDATE_INTERVAL_IN_SECONDS;
     // The fastest update frequency, in seconds
-    private static final int FASTEST_INTERVAL_IN_SECONDS = 10;
+    private static final int FASTEST_INTERVAL_IN_SECONDS = 5;
     // A fast frequency ceiling in milliseconds
     private static final long FASTEST_INTERVAL =
             MILLISECONDS_PER_SECOND * FASTEST_INTERVAL_IN_SECONDS;
@@ -130,8 +130,8 @@ public class MainActivity extends Activity implements ToggleMapListener,
 					Log.i("Note", "Found " + notes.size() + " notes.");
 					// Update the data in the ListView.
 					updateNoteList();
-					// Adjust the notes displayed on the map.
-					adjustMapNotes();
+					// Update the current location and the notes shown on the map.
+					showCurrentLocationOnMap();
 					break;
 				case HANDLER_MESSAGE_SAVE_NOTE:
 					// A note has been saved to the database.
@@ -176,7 +176,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
          * handle callbacks.
          */
         mLocationClient = new LocationClient(this, this, this);
-        // Check if location updats have been requested.
+        // Check if location updates have been requested.
         checkLocationUpdatesRequested();
         // Set the initial state of the location update checkbox.
         CheckBox updateLocationCheckBox = (CheckBox)findViewById(R.id.UpdateLocationCheckBox);
@@ -543,31 +543,34 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	}
 	
 	private void showCurrentLocationOnMap() {
-		if (mMap != null && mCurrentLocation != null) {
+		if (mMap != null) {
 			// Clear all elements previously drawn on the map, if any.
 			clearMapElements();
 			
-			// Create a marker for the map showing the current location.
-			MarkerOptions markerOptions = new MarkerOptions();
-			markerOptions.position(mCurrentLocation);
-			markerOptions.title(getString(R.string.current_position));
-			// Change the marker color.
-			markerOptions.icon(
-					BitmapDescriptorFactory.defaultMarker(
-							BitmapDescriptorFactory.HUE_AZURE));
-			currentLocationMarker = mMap.addMarker(markerOptions);
-			currentLocationMarker.showInfoWindow();
+			if (mCurrentLocation != null) {
+				// Create a marker for the map showing the current location.
+				MarkerOptions markerOptions = new MarkerOptions();
+				markerOptions.position(mCurrentLocation);
+				markerOptions.title(getString(R.string.current_position));
+				// Change the marker color.
+				markerOptions.icon(
+						BitmapDescriptorFactory.defaultMarker(
+								BitmapDescriptorFactory.HUE_AZURE));
+				currentLocationMarker = mMap.addMarker(markerOptions);
+				currentLocationMarker.showInfoWindow();
+				
+				// Add a circle.
+				CircleOptions circleOptions = new CircleOptions();
+				circleOptions.center(mCurrentLocation);
+				circleOptions.strokeColor(R.color.AliceBlue);
+				circleOptions.fillColor(R.color.Aqua);
+				noteRadiusCircle = mMap.addCircle(circleOptions);
+				// Adjust some properties of the circle depending on the current distance.
+				adjustMapCircle();
+			}
 			
-			// Add a circle.
-			CircleOptions circleOptions = new CircleOptions();
-			circleOptions.center(mCurrentLocation);
-			circleOptions.strokeColor(R.color.AliceBlue);
-			circleOptions.fillColor(R.color.Aqua);
-			noteRadiusCircle = mMap.addCircle(circleOptions);
-			// Adjust some properties of the circle depending on the current distance.
-			adjustMapCircle();
-			
-			// Add markers for all the Notes within range.
+			// Add markers for all the Notes within range
+			// or all notes if no range is specified.
 			adjustMapNotes();
 		}
 	}
@@ -647,7 +650,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
     @Override
     public void onConnected(Bundle dataBundle) {
     	// Display the connection status.
-        Toast.makeText(this, getString(R.string.location_services_connected), Toast.LENGTH_SHORT).show();
+        // Toast.makeText(this, getString(R.string.location_services_connected), Toast.LENGTH_SHORT).show();
         // If already requested, start periodic updates
         if (mUpdatesRequested) {
             mLocationClient.requestLocationUpdates(mLocationRequest, this);
@@ -658,8 +661,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
     }
     
     private void getInitialLocation() {
-    	mCurrentLocation = new LatLng(19.866185, -155.594087);
-    	/*
+    	// mCurrentLocation = new LatLng(19.866185, -155.594087);
     	
 		// Attempt to get the last known location.
 		Location currentLocation = mLocationClient.getLastLocation();
@@ -676,7 +678,6 @@ public class MainActivity extends Activity implements ToggleMapListener,
             	zoomToCurrentLocationOnMap();
             }
         }
-        */
 	}
 
 
@@ -730,14 +731,12 @@ public class MainActivity extends Activity implements ToggleMapListener,
     // Define the callback method that receives location updates
     @Override
     public void onLocationChanged(Location location) {
-    	/*
     	Location currentLocation = location;
         mCurrentLocation = new LatLng(
 				currentLocation.getLatitude(),
 				currentLocation.getLongitude());
         // Report to the UI that the location was updated
         reportLocationUpdateToUi();
-        */
     }
     
     private void reportLocationUpdateToUi() {
@@ -749,7 +748,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 
 	public void printCurrentLocation() {
     	String msg = "Updated Location: " +
-                Double.toString(mCurrentLocation.latitude) + "," +
+                Double.toString(mCurrentLocation.latitude) + ", " +
                 Double.toString(mCurrentLocation.longitude);
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
@@ -889,6 +888,10 @@ public class MainActivity extends Activity implements ToggleMapListener,
 				mUpdatesRequested = isChecked;
 				// Update the last known location.
 				if (mUpdatesRequested) {
+					if (mLocationClient != null && mLocationRequest != null) {
+						// Start listening for location updates.
+						mLocationClient.requestLocationUpdates(mLocationRequest, this);
+					}
 					getInitialLocation();
 				}
 				else {

@@ -6,4 +6,7 @@
     <item android:id="@+id/clear_all"
         android:title="@string/clear_all"
         android:showAsAction="collapseActionView" />
+    <!-- Not implemented yet
+    <item android:id="@+id/adjust_update_rate" android:title="@string/adjust_update_rate"></item>
+     -->
 </menu>
