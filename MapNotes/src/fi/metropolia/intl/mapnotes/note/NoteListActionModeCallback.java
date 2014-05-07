@@ -39,12 +39,12 @@ public class NoteListActionModeCallback implements ActionMode.Callback {
     public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
         switch (item.getItemId()) {
             case R.id.edit:
-                Log.i("NoteContext", "Edit note.");
+                // Log.i("NoteContext", "Edit note.");
                 mListener.editNote();
                 mode.finish(); // Action picked, so close the CAB
                 return true;
             case R.id.delete:
-            	Log.i("NoteContext", "Delete note.");
+            	// Log.i("NoteContext", "Delete note.");
             	mListener.deleteNote();
             	mode.finish(); // Action picked, so close the CAB
                 return true;

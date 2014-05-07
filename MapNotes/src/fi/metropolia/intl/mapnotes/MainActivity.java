@@ -127,7 +127,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 				case HANDLER_MESSAGE_FIND_NOTES:
 					// Update the list of Note objects.
 					notes = (ArrayList<Note>)msg.obj;
-					Log.i("Note", "Found " + notes.size() + " notes.");
+					// Log.i("Note", "Found " + notes.size() + " notes.");
 					// Update the data in the ListView.
 					updateNoteList();
 					// Update the current location and the notes shown on the map.
@@ -136,16 +136,16 @@ public class MainActivity extends Activity implements ToggleMapListener,
 				case HANDLER_MESSAGE_SAVE_NOTE:
 					// A note has been saved to the database.
 					Note note = (Note)msg.obj;
-					Log.i("Note", "Saved note with description: " +
-						note.getDescriptionString());
+					// Log.i("Note", "Saved note with description: " +
+					//	note.getDescriptionString());
 					// Request the list of notes to be updated.
 					requestNoteListUpdate();
 					break;
 				case HANDLER_MESSAGE_DELETE_NOTE:
 					// A note has been deleted from the database.
 					Long deletedNoteDatabaseId = (Long)msg.obj;
-					Log.i("Note", "Deleted note with database id: " +
-						deletedNoteDatabaseId);
+					// Log.i("Note", "Deleted note with database id: " +
+					//	deletedNoteDatabaseId);
 					// Request the list of notes to be updated.
 					requestNoteListUpdate();
 					break;
@@ -348,7 +348,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	
 	@Override
 	public void addNote(LatLng noteLocation) {
-		Log.i("Note", "Add note.");
+		// Log.i("Note", "Add note.");
 		// Make a new intent to start a NoteEditActivity.
 		Intent intent = new Intent(this, NoteEditActivity.class);
 		if (noteLocation != null) {
@@ -361,7 +361,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 
 	@Override
 	public void openNote(Note note) {
-		Log.i("Note", "Opening note with description: " + note.getDescriptionString());
+		// Log.i("Note", "Opening note with description: " + note.getDescriptionString());
 		// Make a new intent to start a NoteViewActivity.
 		Intent intent = new Intent(this, NoteViewActivity.class);
 		// Pass the serialized Note to that activity.
@@ -372,7 +372,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 
 	@Override
 	public void editNote(Note note) {
-		Log.i("Note", "Editing note with description: " + note.getDescriptionString());
+		// Log.i("Note", "Editing note with description: " + note.getDescriptionString());
 		// Make a new intent to start a NoteEditActivity.
 		Intent intent = new Intent(this, NoteEditActivity.class);
 		// Pass the serialized Note to that activity.
@@ -383,7 +383,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 
 	@Override
 	public void deleteNote(Note note) {
-		Log.i("Note", "Deleting note with description: " + note.getDescriptionString());
+		// Log.i("Note", "Deleting note with description: " + note.getDescriptionString());
 		// Request the Note with this database id to be deleted from the database.
 		long databaseId = note.getDatabaseId();
 		long locationDatabaseId = note.getLocationDatabaseId();
@@ -410,7 +410,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			
 	private void onConfirmDatabaseClear() {
 		// The user confirmed that the data should be cleared.
-		Log.i("DB", "Clearing all database data.");
+		// Log.i("DB", "Clearing all database data.");
 		dbHelper.deleteNote(NoteDbHelper.DELETE_ALL_ID, NoteDbHelper.DELETE_ALL_ID);
 	}
 
@@ -420,7 +420,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			// Request the list of notes to be updated.
 			// The results will be received when this is done.
 			dbHelper.findNotes(noteDistanceInMeters, mCurrentLocation);
-			Log.i("Note", "Requested findNotes() from dbHelper.");
+			// Log.i("Note", "Requested findNotes() from dbHelper.");
 		}
 	}
 
@@ -443,7 +443,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	}
 	
 	private void updateNoteList() {
-		Log.i("NoteList", "Updating note list.");
+		// Log.i("NoteList", "Updating note list.");
 
 		NoteListFragment noteListFragment =
 			(NoteListFragment) fragmentManager.findFragmentById(
@@ -465,7 +465,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 		
 		if (show) {
 			// The map should be shown.
-			Log.i("Map", "Show map");
+			// Log.i("Map", "Show map");
 			
 			// Create the map fragment.
 			if (mapFragment == null) {
@@ -496,7 +496,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			zoomToCurrentLocationOnMap();
 		} else {
 			// The map should be hidden.
-			Log.i("Map", "Hide map");
+			// Log.i("Map", "Hide map");
 			FragmentTransaction transaction = fragmentManager.beginTransaction();
 			// Set animation for the transaction.
 			transaction.setCustomAnimations(animator.fade_in, animator.fade_out);

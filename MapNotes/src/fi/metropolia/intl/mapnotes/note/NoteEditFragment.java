@@ -125,7 +125,7 @@ public class NoteEditFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.save:
-				Log.i("Note", "Note save.");
+				// Log.i("Note", "Note save.");
 				saveNoteFromViews();
 				break;
 			default:

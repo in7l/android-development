@@ -117,7 +117,7 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 		}
 
 		// Get the position from the pressed item.
-		Log.i("Note", "Pressed item on position: " + position);
+		// Log.i("Note", "Pressed item on position: " + position);
 		
 		mListener.openNote(notes.get(position));
 	}
@@ -174,7 +174,7 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 	}
 	
 	public void setNotes(ArrayList<Note> n) {
-		Log.i("NoteList", "Setting " + n.size() + " notes.");
+		// Log.i("NoteList", "Setting " + n.size() + " notes.");
 		notes = n;
 		// Generate the ListView adapter data in another thread,
 		// as that might be quite resource-consuming.
@@ -194,7 +194,7 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 						noteAdapter.clear();
 						noteAdapter.addAll(idValueMap);
 						noteAdapter.notifyDataSetChanged();
-						Log.i("NoteList", "Setting notes done.");
+						// Log.i("NoteList", "Setting notes done.");
 					}
 				});
 			}

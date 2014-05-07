@@ -93,7 +93,7 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 	public void onStopTrackingTouch(SeekBar seekBar) {
 		// Execute time-consuming business logic
 		// once the user has stopped dragging the SeekBar.
-		Log.i("DistanceSelector", "register changes");
+		// Log.i("DistanceSelector", "register changes");
 		// Notify the DistanceSelectorListener
 		// that the distance has changed.
 		mListener.setDistance(mDistance);

@@ -93,7 +93,7 @@ public class NoteEditActivity extends Activity implements NoteEditListener {
 
 	@Override
 	public void updateNote(Note note) {
-		Log.i("Note", "Update note.");
+		// Log.i("Note", "Update note.");
 		Intent resultIntent = new Intent();
 		// Add the edited Note object to the extras.
 		resultIntent.putExtra(Note.NOTE_BUNDLE_KEY, note);
@@ -104,7 +104,7 @@ public class NoteEditActivity extends Activity implements NoteEditListener {
 
 	@Override
 	public void createNote(Note note) {
-		Log.i("Note", "Create note.");
+		// Log.i("Note", "Create note.");
 		Intent resultIntent = new Intent();
 		// Add the created Note object to the extras.
 		resultIntent.putExtra(Note.NOTE_BUNDLE_KEY, note);

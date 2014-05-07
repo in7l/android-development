@@ -91,7 +91,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					mHandler.sendMessage(message);	
 				}
 			} catch (Exception e) {
-				Log.e("DB", "Unable to SelectNotes. " + e.getMessage(), e);
+				// Log.e("DB", "Unable to SelectNotes. " + e.getMessage(), e);
 			} finally {
 				markRunnableFinished(this);
 			}
@@ -182,9 +182,9 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					// but no noteLocation was fetched (perhaps due to some
 					// invalid data).
 					if (locationDatabaseId != -1 && noteLocation == null) {
-						Log.e("DB", "Found location database id "
-								+ locationDatabaseId
-								+ " referring to an invalid location.");
+						// Log.e("DB", "Found location database id "
+						//		+ locationDatabaseId
+						//		+ " referring to an invalid location.");
 						// Mark that the location database id should be -1.
 						locationDatabaseId = -1;
 					}
@@ -200,9 +200,9 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 							noteLocation.longitude, results);
 					distanceToCurrentLocation = results[0];
 
-					Log.i("DB", "Found a note whose distance from "
-							+ "the current location is "
-							+ distanceToCurrentLocation);
+					// Log.i("DB", "Found a note whose distance from "
+					//		+ "the current location is "
+					//		+ distanceToCurrentLocation);
 				}
 
 				// If there is a distance filter active.
@@ -296,7 +296,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					mHandler.sendMessage(message);
 				}
 			} catch (Exception e) {
-				Log.e("DB", "Unable to SaveNote. " + e.getMessage());
+				// Log.e("DB", "Unable to SaveNote. " + e.getMessage());
 			} finally {
 				markRunnableFinished(this);
 			}
@@ -337,15 +337,15 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					// At this point if the location is known to be saved
 					// successfully to db
 					if (locationDatabaseId != -1) {
-						Log.i("DB", "Found/created location with database id "
-								+ locationDatabaseId);
+						// Log.i("DB", "Found/created location with database id "
+						//		+ locationDatabaseId);
 						// add a reference to it in the note table.
 						values.put(NoteEntry.COLUMN_NAME_LOCATION_ID,
 								locationDatabaseId);
 						// Store the location database id in the Note.
 						note.setLocationDatabaseId(locationDatabaseId);
 					} else {
-						Log.e("DB", "Failed to save location to database.");
+						// Log.e("DB", "Failed to save location to database.");
 					}
 				}
 			}
@@ -361,10 +361,10 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				int count = db.update(NoteEntry.TABLE_NAME, values, selection,
 						selectionArgs);
 				if (count > 0) {
-					Log.i("DB", "Updated note with id " + databaseId);
+					// Log.i("DB", "Updated note with id " + databaseId);
 					return true;
 				} else {
-					Log.e("DB", "Failed to update note with id " + databaseId);
+					// Log.e("DB", "Failed to update note with id " + databaseId);
 					return false;
 				}
 			} else {
@@ -377,10 +377,10 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				if (newRowId != -1) {
 					// Assign the databaseId to the Note object.
 					note.setDatabaseId(newRowId);
-					Log.i("DB", "Saved note with id " + note.getDatabaseId());
+					// Log.i("DB", "Saved note with id " + note.getDatabaseId());
 					return true;
 				} else {
-					Log.e("DB", "Failed to save note.");
+					// Log.e("DB", "Failed to save note.");
 
 					// If some database operation was performed for this Note's
 					// location.
@@ -393,11 +393,11 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 							boolean deleted = locationDbHelper
 									.deleteLocationFromDatabase();
 							if (deleted) {
-								Log.i("DB",
-										"Deleted unused location from database.");
+								// Log.i("DB",
+								//		"Deleted unused location from database.");
 							} else {
-								Log.i("DB",
-										"Failed to deleted unused location from database.");
+								// Log.i("DB",
+								//		"Failed to deleted unused location from database.");
 							}
 						}
 					}
@@ -442,7 +442,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 					mHandler.sendMessage(message);
 				}
 			} catch (Exception e) {
-				Log.e("DB", "Unable to DeleteNote. " + e.getMessage());
+				// Log.e("DB", "Unable to DeleteNote. " + e.getMessage());
 			} finally {
 				markRunnableFinished(this);
 			}
@@ -458,10 +458,10 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				
 				int count = db.delete(NoteEntry.TABLE_NAME, "1", null);
 				if (count > 0) {
-					Log.i("DB", "Deleted all " + count + " notes from database.");
+					// Log.i("DB", "Deleted all " + count + " notes from database.");
 					return true;
 				} else {
-					Log.w("DB", "No notes deleted from database. Perhaps it is empty.");
+					// Log.w("DB", "No notes deleted from database. Perhaps it is empty.");
 					return false;
 				}
 			}
@@ -475,7 +475,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 
 			if (count > 0) {
 				// Some row was deleted.
-				Log.i("DB", "Deleted note with id " + databaseId);
+				// Log.i("DB", "Deleted note with id " + databaseId);
 
 				// If this note had a location saved to database.
 				if (locationDatabaseId != -1) {
@@ -487,17 +487,17 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 						boolean deleted = locationDatabaseHelper
 								.deleteLocationFromDatabase();
 						if (deleted) {
-							Log.i("DB",
-									"Deleted unused location from database.");
+							// Log.i("DB",
+							//		"Deleted unused location from database.");
 						} else {
-							Log.i("DB",
-									"Failed to deleted unused location from database.");
+							// Log.i("DB",
+							//		"Failed to deleted unused location from database.");
 						}
 					}
 				}
 				return true;
 			} else {
-				Log.e("DB", "Failed to delete note with id " + databaseId);
+				// Log.e("DB", "Failed to delete note with id " + databaseId);
 				return false;
 			}
 		}
@@ -589,9 +589,9 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			// If only the location database id is known.
 			if (locationDatabaseId != -1) {
 				// Nothing can be saved to database.
-				Log.e("DB", "Nothing can be saved to database. "
-						+ "Only database id " + locationDatabaseId
-						+ " specified.");
+				// Log.e("DB", "Nothing can be saved to database. "
+				//		+ "Only database id " + locationDatabaseId
+				//		+ " specified.");
 				return -1;
 			}
 
@@ -605,9 +605,9 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			locationRowId = db.insert(LocationEntry.TABLE_NAME, null,
 					locationValues);
 			if (locationRowId != -1) {
-				Log.i("DB", "Saved location with id " + locationRowId);
+				// Log.i("DB", "Saved location with id " + locationRowId);
 			} else {
-				Log.e("DB", "Failed to save location to database.");
+				// Log.e("DB", "Failed to save location to database.");
 			}
 			return locationRowId;
 		}
@@ -628,10 +628,10 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				if (databaseIdToBeDeleted == DELETE_ALL_ID) {
 					int count = db.delete(LocationEntry.TABLE_NAME, "1", null);
 					if (count > 0) {
-						Log.i("DB", "Deleted all " + count + " locations from database.");
+						// Log.i("DB", "Deleted all " + count + " locations from database.");
 						return true;
 					} else {
-						Log.w("DB", "No locations deleted from database. Perhaps it is empty.");
+						// Log.w("DB", "No locations deleted from database. Perhaps it is empty.");
 						return false;
 					}
 				}
@@ -646,12 +646,12 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 
 				if (count > 0) {
 					// Some row was deleted.
-					Log.i("DB", "Deleted location with id "
-							+ databaseIdToBeDeleted);
+					// Log.i("DB", "Deleted location with id "
+					//		+ databaseIdToBeDeleted);
 					return true;
 				} else {
-					Log.e("DB", "Failed to delete location with id "
-							+ databaseIdToBeDeleted);
+					// Log.e("DB", "Failed to delete location with id "
+					//		+ databaseIdToBeDeleted);
 					return false;
 				}
 			}
@@ -704,7 +704,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
         	// If it was requested that the database instance be closed
         	// and now the instance is fetched again, then it should not be closed.
         	mInstance.closeRequested = false;
-        	Log.i("DB", "Marked that DB helper should not be closed.");
+        	// Log.i("DB", "Marked that DB helper should not be closed.");
         }
         return mInstance;
 	}
@@ -782,7 +782,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 	public void requestClose() {
 		// Mark that it was requested that this database helper be closed.
 		closeRequested = true;
-		Log.i("DB", "Requested DB helper close.");
+		// Log.i("DB", "Requested DB helper close.");
 		// If there are no active runnables, close the DB helper right away.
 		if (activeRunnables.size() == 0) {
 			closeSingleton();
@@ -792,6 +792,6 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 	public void closeSingleton() {
 		this.close();
 		mInstance = null;
-		Log.i("DB", "Closed DB helper.");
+		// Log.i("DB", "Closed DB helper.");
 	}
 }
