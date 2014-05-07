@@ -2,7 +2,11 @@ package fi.metropolia.intl.mapnotes.db;
 
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
 
+import com.google.android.gms.internal.ig;
 import com.google.android.gms.maps.model.LatLng;
 
 import fi.metropolia.intl.mapnotes.MainActivity;
@@ -54,6 +58,8 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 	// SQL for deleting Location table.
 	private static final String SQL_DELETE_LOCATIONS = "DROP TABLE IF EXISTS "
 			+ LocationEntry.TABLE_NAME;
+	
+	public static final int DELETE_ALL_ID = -2;
 
 	// Runnable for finding/selecting notes.
 	private class SelectNotes implements Runnable {
@@ -75,25 +81,23 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				}
 
 				ArrayList<Note> notes = findNotes();
-				// Obtain a message from the UI Handler.
-				Message message = mHandler
-						.obtainMessage(MainActivity.HANDLER_MESSAGE_FIND_NOTES);
-				message.obj = notes;
-				// Send the message to the main thread.
-				mHandler.sendMessage(message);
+				// If this thread does not need to be interrupted earlier than expected.
+				if (notes != null) {
+					// Obtain a message from the UI Handler.
+					Message message = mHandler
+							.obtainMessage(MainActivity.HANDLER_MESSAGE_FIND_NOTES);
+					message.obj = notes;
+					// Send the message to the main thread.
+					mHandler.sendMessage(message);	
+				}
 			} catch (Exception e) {
 				Log.e("DB", "Unable to SelectNotes. " + e.getMessage(), e);
 			} finally {
-				// If a database connection was successfully opened.
-				if (db != null) {
-					// Close the database object.
-					db.close();
-					db = null;
-				}
+				markRunnableFinished(this);
 			}
 		}
 
-		private ArrayList<Note> findNotes() {
+		private ArrayList<Note> findNotes() throws InterruptedException {
 			ArrayList<Note> notes = new ArrayList<Note>();
 
 			// Create a querybuilder. Needed for joining two tables.
@@ -139,6 +143,12 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 
 			// Go through all rows and create Note objects.
 			do {
+				// If it was requested that the database helper be closed.
+				if (closeRequested) {
+					// Stop finding notes.
+					return null;
+				}
+				
 				// First get the location to verify if this note is within
 				// range.
 				double locationX = -1;
@@ -288,12 +298,7 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			} catch (Exception e) {
 				Log.e("DB", "Unable to SaveNote. " + e.getMessage());
 			} finally {
-				// If a database connection was successfully opened.
-				if (db != null) {
-					// Close the database object.
-					db.close();
-					db = null;
-				}
+				markRunnableFinished(this);
 			}
 		}
 
@@ -439,16 +444,28 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 			} catch (Exception e) {
 				Log.e("DB", "Unable to DeleteNote. " + e.getMessage());
 			} finally {
-				// If a database connection was successfully opened.
-				if (db != null) {
-					// Close the database object.
-					db.close();
-					db = null;
-				}
+				markRunnableFinished(this);
 			}
 		}
 
 		private boolean deleteNoteFromDatabase() {
+			// If 'delete all' operation was requested.
+			if (databaseId == DELETE_ALL_ID) {
+				// Delete all locations.
+				LocationDatabaseHelper locationDatabaseHelper = new LocationDatabaseHelper(
+						db, DELETE_ALL_ID);
+				locationDatabaseHelper.deleteLocationFromDatabase();
+				
+				int count = db.delete(NoteEntry.TABLE_NAME, "1", null);
+				if (count > 0) {
+					Log.i("DB", "Deleted all " + count + " notes from database.");
+					return true;
+				} else {
+					Log.w("DB", "No notes deleted from database. Perhaps it is empty.");
+					return false;
+				}
+			}
+			
 			// Attempt to delete this Note's row from the database.
 			String selection = NoteEntry._ID + " = ?";
 			String selectionArgs[] = { String.valueOf(databaseId) };
@@ -605,8 +622,20 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 				databaseIdToBeDeleted = locationDatabaseId;
 			}
 
-			// If there is something to be delete from database.
+			// If there is something to be deleted from database.
 			if (databaseIdToBeDeleted != -1) {
+				// If it was requested that all locations be deleted from database.
+				if (databaseIdToBeDeleted == DELETE_ALL_ID) {
+					int count = db.delete(LocationEntry.TABLE_NAME, "1", null);
+					if (count > 0) {
+						Log.i("DB", "Deleted all " + count + " locations from database.");
+						return true;
+					} else {
+						Log.w("DB", "No locations deleted from database. Perhaps it is empty.");
+						return false;
+					}
+				}
+				
 				// Attempt to delete this Location's row from the database.
 				String selection = LocationEntry._ID + " = ?";
 				String selectionArgs[] = { String
@@ -657,12 +686,34 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 		}
 	}
 
+	private static NoteDbHelper mInstance = null;
 	private Handler mHandler;
+	private Set<Runnable> activeRunnables;
+	private boolean closeRequested = false;
+	
+	public static NoteDbHelper getInstance(Context context, Handler handler) {
+		 /** 
+         * Use the application context as suggested by CommonsWare.
+         * this will ensure that you dont accidentally leak an Activity's
+         * context.
+         */
+        if (mInstance == null) {
+            mInstance = new NoteDbHelper(context.getApplicationContext(), handler);
+        }
+        else {
+        	// If it was requested that the database instance be closed
+        	// and now the instance is fetched again, then it should not be closed.
+        	mInstance.closeRequested = false;
+        	Log.i("DB", "Marked that DB helper should not be closed.");
+        }
+        return mInstance;
+	}
 
-	public NoteDbHelper(Context context, Handler handler) {
+	private NoteDbHelper(Context context, Handler handler) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 		// Store a reference to the Handler for Thread messages.
 		mHandler = handler;
+		activeRunnables = new HashSet<Runnable>();
 	}
 
 	@Override
@@ -689,17 +740,58 @@ public class NoteDbHelper extends SQLiteOpenHelper {
 	public void findNotes(int distanceInMeters, LatLng currentLocation) {
 		// Create a new thread and start it. This will request the notes.
 		// The results will be returned when they are ready.
-		new Thread(new SelectNotes(distanceInMeters, currentLocation)).start();
+		Runnable r = new SelectNotes(distanceInMeters, currentLocation);
+		activeRunnables.add(r);
+		new Thread(r).start();
 	}
 
 	public void saveNote(Note note) {
 		// Start a new thread for saving the Note to database.
-		new Thread(new SaveNote(note)).start();
+		Runnable r = new SaveNote(note);
+		activeRunnables.add(r);
+		new Thread(r).start();
 	}
 
-	public void deleteNote(long databaseId) {
+	public void deleteNote(long databaseId, long locationDatabaseId) {
 		// Start a new thread that will attempt to delete the note with
 		// the specified id from the database.
-		new Thread(new DeleteNote(databaseId)).start();
+		Runnable r = new DeleteNote(databaseId, locationDatabaseId);
+		activeRunnables.add(r);
+		new Thread(r).start();
+	}
+	
+	public void markRunnableFinished(Runnable r) {
+		// Remove this runnable from the set of active runnables.
+		activeRunnables.remove(r);
+		// If there are no more active runnables.
+		if (activeRunnables.size() == 0) {
+			// If it was requested that this database helper be closed.
+			if (closeRequested) {
+				// Close this database helper.
+				closeSingleton();
+			}
+		}
+	}
+
+	public void removeHandlerCallbacks() {
+		for (Runnable r : activeRunnables) {
+			mHandler.removeCallbacks(r);
+		}
+	}
+	
+	public void requestClose() {
+		// Mark that it was requested that this database helper be closed.
+		closeRequested = true;
+		Log.i("DB", "Requested DB helper close.");
+		// If there are no active runnables, close the DB helper right away.
+		if (activeRunnables.size() == 0) {
+			closeSingleton();
+		}
+	}
+	
+	public void closeSingleton() {
+		this.close();
+		mInstance = null;
+		Log.i("DB", "Closed DB helper.");
 	}
 }

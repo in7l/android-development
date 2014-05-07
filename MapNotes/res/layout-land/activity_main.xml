@@ -11,6 +11,13 @@
 	    android:layout_weight="1.0"
 	    android:orientation="vertical"
 	    android:background="@drawable/right_border" >
+	    
+        <CheckBox
+        android:id="@+id/UpdateLocationCheckBox"
+        android:text="@string/update_location"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:background="@drawable/bottom_and_right_borders" />
 	
 	    <fragment
 	        android:id="@+id/NoteListContainer"

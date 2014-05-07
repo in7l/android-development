@@ -99,7 +99,7 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 		mListener.setDistance(mDistance);
 	}
 	
-	public int calculateProgressDistance(int progress) {
+	private int calculateProgressDistance(int progress) {
 		int distance = (int) Math.pow(progress, DATE_SELECTOR_EXPONENT);
 		// The distance can be minimum 15.
 		distance += 15;
@@ -109,7 +109,12 @@ public class DistanceSelectorFragment extends Fragment implements OnSeekBarChang
 		return distance;
 	}
 	
-	public void setDistanceFromSeekBar(int progress) {
+	public void updateDistanceFromSeekBar() {
+		int progress = distanceSeekBar.getProgress();
+		setDistanceFromSeekBar(progress);
+	}
+	
+	private void setDistanceFromSeekBar(int progress) {
 		int distance = calculateProgressDistance(progress);
 		
 		// If the SeekBar has been set to the maximum

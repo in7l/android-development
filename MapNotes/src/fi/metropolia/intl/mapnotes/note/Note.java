@@ -125,6 +125,8 @@ public class Note implements Serializable {
 			this.locationX = location.latitude;
 			this.locationY = location.longitude;
 		}
+		// Whenever the location is updated, set the location database id to -1.
+		this.locationDatabaseId = -1;
 	}
 
 	public Date getDatetime() {

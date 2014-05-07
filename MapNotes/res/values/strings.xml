@@ -20,12 +20,17 @@
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
     <string name="edit_note">Edit Note</string>
-    <string name="no_note_results">No notes found that match the given criteria.\nYou can add new notes by using the Add Note button in the action bar.</string>
+    <string name="no_note_results">No notes found that match the given criteria.\nYou can add new notes by using the Add Note button in the action bar or by selecting a place on the map.</string>
     <string name="add_note">Add Note</string>
     <string name="save">Save</string>
     <string name="update_note_datetime">Update the edit time of this note</string>
     <string name="current_position">Current position</string>
-    <string name="use_current_location">Save current location</string>
+    <string name="use_current_location">Save current location (if available)</string>
     <string name="current_location_not_saved">The current location could not be retrieved. The note has been saved without location.</string>
+    <string name="clear_all">Clear all notes and locations</string>
+    <string name="update_location">Update location</string>
+    <string name="location_services_connected">Able to access location services</string>
+    <string name="clear_all_title">Clear all database data</string>
+    <string name="clear_all_message">Are you sure you want to clear all notes and locations from the database? This cannot be undone.</string>
 
 </resources>

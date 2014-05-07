@@ -17,6 +17,7 @@ import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -36,12 +37,14 @@ import android.os.Message;
 import android.R.animator;
 import android.R.integer;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
@@ -49,6 +52,9 @@ import android.content.SharedPreferences.Editor;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.Toast;
@@ -57,23 +63,24 @@ public class MainActivity extends Activity implements ToggleMapListener,
 		NoteListListener, DistanceSelectorListener,
 		GooglePlayServicesClient.ConnectionCallbacks,
 		GooglePlayServicesClient.OnConnectionFailedListener,
-		LocationListener, OnInfoWindowClickListener {
+		LocationListener, OnInfoWindowClickListener, OnCheckedChangeListener, OnMapClickListener {
 	public static final int HANDLER_MESSAGE_FIND_NOTES = 0;
 	public static final int HANDLER_MESSAGE_SAVE_NOTE = 1;
 	public static final int HANDLER_MESSAGE_DELETE_NOTE = 2;
 	public static final int ACTIVITY_ADD_NOTE = 0;
 	public static final int ACTIVITY_EDIT_NOTE = 1;
 	public static final String CURRENT_LOCATION_BUNDLE_KEY = "current_location";
+	public static final String NOTE_LOCATION_BUNDLE_KEY = "note_location";
 	
 	// Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
     // Update frequency in seconds
-    public static final int UPDATE_INTERVAL_IN_SECONDS = 15;
+    public static final int UPDATE_INTERVAL_IN_SECONDS = 60;
     // Update frequency in milliseconds
     private static final long UPDATE_INTERVAL =
             MILLISECONDS_PER_SECOND * UPDATE_INTERVAL_IN_SECONDS;
     // The fastest update frequency, in seconds
-    private static final int FASTEST_INTERVAL_IN_SECONDS = 5;
+    private static final int FASTEST_INTERVAL_IN_SECONDS = 10;
     // A fast frequency ceiling in milliseconds
     private static final long FASTEST_INTERVAL =
             MILLISECONDS_PER_SECOND * FASTEST_INTERVAL_IN_SECONDS;
@@ -84,6 +91,11 @@ public class MainActivity extends Activity implements ToggleMapListener,
      */
     private final static int
             CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    
+    /* Variables for saving and restoring state. */
+    private static final String STATE_NOTE_DISTANCE = "note_distance";
+    private static final String STATE_MAP_VISIBLE = "map_visible";
+    private static final String STATE_CURRENT_LOCATION = "current_location";
 	
 	private NoteDbHelper dbHelper;
 	private FragmentManager fragmentManager;
@@ -97,13 +109,15 @@ public class MainActivity extends Activity implements ToggleMapListener,
     private LatLng mCurrentLocation;
     // Define an object that holds accuracy and frequency parameters
     private LocationRequest mLocationRequest;
-    private boolean mUpdatesRequested;
+    private boolean mUpdatesRequested = false;
     private SharedPreferences mPrefs;
 	private Editor mEditor;
 	private Circle noteRadiusCircle;
 	// A map that holds map markers and their corresponding notes.
 	private Map<Marker, Note> mapMarkers;
+	private Marker currentLocationMarker;
 	private int noteDistanceInMeters = -1;
+	private boolean mapVisible = false;
 	
 	private Handler uiHandler = new Handler() {
 
@@ -149,9 +163,6 @@ public class MainActivity extends Activity implements ToggleMapListener,
 		// Store a reference to the fragment manager.
 		fragmentManager = getFragmentManager();
 		
-		// Create a SQLiteOpenHelper.
-		dbHelper = new NoteDbHelper(this, uiHandler);
-		
 		// Open the shared preferences
         mPrefs = getSharedPreferences("SharedPreferences",
                 Context.MODE_PRIVATE);
@@ -165,9 +176,13 @@ public class MainActivity extends Activity implements ToggleMapListener,
          * handle callbacks.
          */
         mLocationClient = new LocationClient(this, this, this);
-        // Start with updates turned off
-        mUpdatesRequested = false;
-
+        // Check if location updats have been requested.
+        checkLocationUpdatesRequested();
+        // Set the initial state of the location update checkbox.
+        CheckBox updateLocationCheckBox = (CheckBox)findViewById(R.id.UpdateLocationCheckBox);
+        updateLocationCheckBox.setChecked(mUpdatesRequested);
+        // Register listener for the checkbox.
+        updateLocationCheckBox.setOnCheckedChangeListener(this);
 
         // Create the LocationRequest object
         mLocationRequest = LocationRequest.create();
@@ -178,8 +193,6 @@ public class MainActivity extends Activity implements ToggleMapListener,
         mLocationRequest.setInterval(UPDATE_INTERVAL);
         // Set the fastest update interval.
         mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
-        
-        
 	}
 	
 
@@ -191,31 +204,49 @@ public class MainActivity extends Activity implements ToggleMapListener,
 		super.onStart();
         // Connect the client.
         mLocationClient.connect();
+        
+		// Create a SQLiteOpenHelper if necessary.
+        if (dbHelper == null) {
+        	dbHelper = NoteDbHelper.getInstance(this, uiHandler);
+        }
 	}
 	
 	@Override
     protected void onResume() {
 		super.onResume();
-        /*
-         * Get any previous setting for location updates
-         * Gets "false" if an error occurs
-         */
-        if (mPrefs.contains("KEY_UPDATES_ON")) {
-            mUpdatesRequested =
-                    mPrefs.getBoolean("KEY_UPDATES_ON", false);
-
-        // Otherwise, turn off location updates
-        } else {
-            mEditor.putBoolean("KEY_UPDATES_ON", false);
-            mEditor.commit();
-        }
+        checkLocationUpdatesRequested();
     }
 	
+	
+
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+		
+		int noteDistance = savedInstanceState.getInt(STATE_NOTE_DISTANCE, -1);
+		boolean showMap = savedInstanceState.getBoolean(STATE_MAP_VISIBLE, false);
+		mCurrentLocation = savedInstanceState.getParcelable(STATE_CURRENT_LOCATION);
+		
+		setDistance(noteDistance);
+		showMap(showMap);
+	}
+
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		outState.putInt(STATE_NOTE_DISTANCE, noteDistanceInMeters);
+		outState.putBoolean(STATE_MAP_VISIBLE, mapVisible);
+		outState.putParcelable(STATE_CURRENT_LOCATION, mCurrentLocation);
+		
+		super.onSaveInstanceState(outState);
+	}
+
+
 	@Override
     protected void onPause() {
         // Save the current setting for updates
         mEditor.putBoolean("KEY_UPDATES_ON", mUpdatesRequested);
-        mEditor.commit();
+        mEditor.commit();       
         super.onPause();
     }
 
@@ -239,8 +270,21 @@ public class MainActivity extends Activity implements ToggleMapListener,
          * considered "dead".
          */
         mLocationClient.disconnect();
+        
+        // Close the database helper.
+        if (dbHelper != null) {
+        	dbHelper.removeHandlerCallbacks();
+        	// Request this database helper to be closed
+        	// once all of its runnables are no longer active.
+        	dbHelper.requestClose();
+        	dbHelper = null;
+        }
+        
         super.onStop();
     }
+    
+    
+    
 
 
 	@Override
@@ -260,6 +304,11 @@ public class MainActivity extends Activity implements ToggleMapListener,
 				if (resultCode == Activity.RESULT_OK) {
 					Note note = (Note) data.getSerializableExtra(Note.NOTE_BUNDLE_KEY);
 					if (note != null) {
+						// Since the current method could be called before onStart()
+						// Create a SQLiteOpenHelper if necessary.
+				        if (dbHelper == null) {
+				        	dbHelper = NoteDbHelper.getInstance(this, uiHandler);
+				        }
 						// A new note has been created.
 						// Save it to the database.
 						persistNote(note);
@@ -271,6 +320,11 @@ public class MainActivity extends Activity implements ToggleMapListener,
 					// Get the note that has been edited.
 					Note note = (Note) data.getSerializableExtra(Note.NOTE_BUNDLE_KEY);
 					if (note != null) {
+						// Since the current method could be called before onStart()
+						// Create a SQLiteOpenHelper if necessary.
+				        if (dbHelper == null) {
+				        	dbHelper = NoteDbHelper.getInstance(this, uiHandler);
+				        }
 						// Save the changes to the database.
 						persistNote(note);
 					}
@@ -293,10 +347,14 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	}
 	
 	@Override
-	public void addNote() {
+	public void addNote(LatLng noteLocation) {
 		Log.i("Note", "Add note.");
 		// Make a new intent to start a NoteEditActivity.
 		Intent intent = new Intent(this, NoteEditActivity.class);
+		if (noteLocation != null) {
+			// This note should be created at a specific location.
+			intent.putExtra(NOTE_LOCATION_BUNDLE_KEY, noteLocation);
+		}
 		// Start the activity.
 		startActivityForResult(intent, ACTIVITY_ADD_NOTE);
 	}
@@ -328,7 +386,32 @@ public class MainActivity extends Activity implements ToggleMapListener,
 		Log.i("Note", "Deleting note with description: " + note.getDescriptionString());
 		// Request the Note with this database id to be deleted from the database.
 		long databaseId = note.getDatabaseId();
-		dbHelper.deleteNote(databaseId);
+		long locationDatabaseId = note.getLocationDatabaseId();
+		dbHelper.deleteNote(databaseId, locationDatabaseId);
+	}
+	
+	@Override
+	public void clearAllDatabaseData() {
+		// Show a dialog prompting the user to confirm this decision.
+		new AlertDialog.Builder(this)
+			.setTitle(getString(R.string.clear_all_title))
+			.setMessage(getString(R.string.clear_all_message))
+			.setIcon(android.R.drawable.ic_dialog_alert)
+			.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+				@Override
+			    public void onClick(DialogInterface dialog, int whichButton) {
+			        onConfirmDatabaseClear();
+			    }
+			})
+			 .setNegativeButton(android.R.string.no, null).show();
+	}
+		
+		
+			
+	private void onConfirmDatabaseClear() {
+		// The user confirmed that the data should be cleared.
+		Log.i("DB", "Clearing all database data.");
+		dbHelper.deleteNote(NoteDbHelper.DELETE_ALL_ID, NoteDbHelper.DELETE_ALL_ID);
 	}
 
 	@Override
@@ -361,16 +444,25 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	
 	private void updateNoteList() {
 		Log.i("NoteList", "Updating note list.");
-		// Log.i("StackTrace", String.valueOf(new Date().getTime()));
-		// Log.e("StackTrace", Log.getStackTraceString(new Exception()));
+
 		NoteListFragment noteListFragment =
 			(NoteListFragment) fragmentManager.findFragmentById(
 				R.id.NoteListContainer);
-		noteListFragment.setNotes(notes);
+		if (noteListFragment != null) {
+			noteListFragment.setNotes(notes);
+		}
 	}
 	
 	@Override
 	public void showMap(boolean show) {
+		// If the state did not really change.
+		if (mapVisible == show) {
+			return;
+		}
+		
+		// Save the new state.
+		mapVisible = show;
+		
 		if (show) {
 			// The map should be shown.
 			Log.i("Map", "Show map");
@@ -401,6 +493,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			
 			setUpMapIfNeeded();
 			showCurrentLocationOnMap();
+			zoomToCurrentLocationOnMap();
 		} else {
 			// The map should be hidden.
 			Log.i("Map", "Hide map");
@@ -443,15 +536,16 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	        if (mMap != null) {
 	            // The Map is verified. It is now safe to manipulate the map.
 	        	mMap.setOnInfoWindowClickListener(this);
+	        	mMap.setOnMapClickListener(this);
+	        	mapMarkers = new HashMap<Marker, Note>();
 	        }
 	    }
 	}
 	
 	private void showCurrentLocationOnMap() {
 		if (mMap != null && mCurrentLocation != null) {
-			// Zoom to the current location
-			CameraUpdate update = CameraUpdateFactory.newLatLngZoom(mCurrentLocation, 15);
-			mMap.animateCamera(update);
+			// Clear all elements previously drawn on the map, if any.
+			clearMapElements();
 			
 			// Create a marker for the map showing the current location.
 			MarkerOptions markerOptions = new MarkerOptions();
@@ -461,7 +555,8 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			markerOptions.icon(
 					BitmapDescriptorFactory.defaultMarker(
 							BitmapDescriptorFactory.HUE_AZURE));
-			mMap.addMarker(markerOptions).showInfoWindow();
+			currentLocationMarker = mMap.addMarker(markerOptions);
+			currentLocationMarker.showInfoWindow();
 			
 			// Add a circle.
 			CircleOptions circleOptions = new CircleOptions();
@@ -471,12 +566,48 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			noteRadiusCircle = mMap.addCircle(circleOptions);
 			// Adjust some properties of the circle depending on the current distance.
 			adjustMapCircle();
-			mapMarkers = new HashMap<Marker, Note>();
+			
+			// Add markers for all the Notes within range.
 			adjustMapNotes();
 		}
 	}
 	
+	private void zoomToCurrentLocationOnMap() {
+		if (mMap != null && mCurrentLocation != null) {
+			// Zoom to the current location
+			CameraUpdate update = CameraUpdateFactory.newLatLngZoom(mCurrentLocation, 15);
+			mMap.animateCamera(update);
+		}
+	}
 	
+	private void clearMapElements() {
+		if (mMap != null) {
+			// Clear the note markers.
+			clearMapNoteMarkers();
+			// Clear the note radius circle.
+			clearMapNoteRadiusCircle();
+			// Clear the current location marker.
+			clearMapCurrentLocationMarker();
+		}
+	}
+
+
+	private void clearMapCurrentLocationMarker() {
+		if (currentLocationMarker != null) {
+			currentLocationMarker.remove();
+			currentLocationMarker = null;
+		}
+	}
+
+
+	private void clearMapNoteRadiusCircle() {
+		if (noteRadiusCircle != null) {
+			noteRadiusCircle.remove();
+			noteRadiusCircle = null;
+		}
+	}
+
+
 	// Define a DialogFragment that displays the error dialog
     public static class ErrorDialogFragment extends DialogFragment {
         // Global field to contain the error dialog
@@ -515,24 +646,41 @@ public class MainActivity extends Activity implements ToggleMapListener,
      */
     @Override
     public void onConnected(Bundle dataBundle) {
-    	// Display the connection status
-        Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+    	// Display the connection status.
+        Toast.makeText(this, getString(R.string.location_services_connected), Toast.LENGTH_SHORT).show();
         // If already requested, start periodic updates
         if (mUpdatesRequested) {
             mLocationClient.requestLocationUpdates(mLocationRequest, this);
+            
+            // Attempt to get the last known location immediately.
+            getInitialLocation();
         }
-        Location currentLocation = mLocationClient.getLastLocation();
+    }
+    
+    private void getInitialLocation() {
+    	mCurrentLocation = new LatLng(19.866185, -155.594087);
+    	/*
+    	
+		// Attempt to get the last known location.
+		Location currentLocation = mLocationClient.getLastLocation();
         if (currentLocation != null) {
         	mCurrentLocation = new LatLng(
 				currentLocation.getLatitude(),
 				currentLocation.getLongitude());
-            printCurrentLocation();
-            // Refresh the list of notes.
-            requestNoteListUpdate();
+        	// Report the location update to the UI.
+        	reportLocationUpdateToUi();
+        	
+        	// If the map is visible, show the current location on the map.
+            if (mapVisible) {
+            	showCurrentLocationOnMap();
+            	zoomToCurrentLocationOnMap();
+            }
         }
-    }
-    
-    /*
+        */
+	}
+
+
+	/*
      * Called by Location Services if the connection to the
      * location client drops because of an error.
      */
@@ -582,15 +730,24 @@ public class MainActivity extends Activity implements ToggleMapListener,
     // Define the callback method that receives location updates
     @Override
     public void onLocationChanged(Location location) {
+    	/*
     	Location currentLocation = location;
         mCurrentLocation = new LatLng(
 				currentLocation.getLatitude(),
 				currentLocation.getLongitude());
         // Report to the UI that the location was updated
-        printCurrentLocation();
+        reportLocationUpdateToUi();
+        */
     }
     
-    public void printCurrentLocation() {
+    private void reportLocationUpdateToUi() {
+    	printCurrentLocation();
+        // Refresh the list of notes.
+        requestNoteListUpdate();
+	}
+
+
+	public void printCurrentLocation() {
     	String msg = "Updated Location: " +
                 Double.toString(mCurrentLocation.latitude) + "," +
                 Double.toString(mCurrentLocation.longitude);
@@ -622,7 +779,7 @@ public class MainActivity extends Activity implements ToggleMapListener,
 	
 	}
 	
-	private void adjustMapNotes() {
+	private void clearMapNoteMarkers() {
 		if (mapMarkers != null) {
 			// Remove all the current markers from the map.
 			for (Entry<Marker, Note> mapMarkerNoteEntry : mapMarkers.entrySet()) {
@@ -632,6 +789,12 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			
 			// Clear the map of Marker-Note pairs.
 			mapMarkers.clear();
+		}
+	}
+	
+	private void adjustMapNotes() {
+		if (mapMarkers != null) {
+			clearMapNoteMarkers();
 			
 			// If there are some notes to be displayed.
 			if (notes != null && notes.size() > 0) {
@@ -661,6 +824,9 @@ public class MainActivity extends Activity implements ToggleMapListener,
 						}
 						markerTitle = noteDescription.substring(0, substrLength) +
 								"..."; 
+					}
+					else {
+						markerTitle = "Note " + note.getDatabaseId();
 					}
 					// Set the marker title if any.
 					if (markerTitle != null) {
@@ -692,4 +858,51 @@ public class MainActivity extends Activity implements ToggleMapListener,
 			openNote(note);
 		}
 	}
+	
+	/**
+	 * Check if location updates were requested and initialize
+	 * the mUpdatesRequested variable depending on that. 
+	 */
+	public void checkLocationUpdatesRequested() {
+		/*
+         * Get any previous setting for location updates
+         * Gets "false" if an error occurs
+         */
+        if (mPrefs.contains("KEY_UPDATES_ON")) {
+            mUpdatesRequested =
+                    mPrefs.getBoolean("KEY_UPDATES_ON", false);
+            
+
+        // Otherwise, turn off location updates
+        } else {
+            mEditor.putBoolean("KEY_UPDATES_ON", false);
+            mEditor.commit();
+            mUpdatesRequested = false;
+        }
+	}
+
+
+	@Override
+	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+		switch (buttonView.getId()) {
+			case R.id.UpdateLocationCheckBox:
+				mUpdatesRequested = isChecked;
+				// Update the last known location.
+				if (mUpdatesRequested) {
+					getInitialLocation();
+				}
+				else {
+					// Stop listening for location updates.
+					mLocationClient.removeLocationUpdates(this);
+				}
+				break;
+		}
+	}
+
+
+	@Override
+	public void onMapClick(LatLng noteLocation) {
+		addNote(noteLocation);
+	}
+
 }

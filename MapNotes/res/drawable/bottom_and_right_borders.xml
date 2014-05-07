@@ -8,7 +8,8 @@
         </shape>
     </item>
     <item
-        android:right="1dp">
+        android:bottom="1dp"
+        android:right="1dp" >
         <shape android:shape="rectangle" >
             <stroke  android:width="2dp"
                      android:color="@android:color/background_light" />

@@ -13,11 +13,24 @@ import android.util.Log;
 import android.view.MenuItem;
 
 public class NoteEditActivity extends Activity implements NoteEditListener {
+	private static final String STATE_NOTE = "note";
+	private static final String STATE_NOTE_EDIT_FRAGMENT = "note_edit_fragment";
+	
+	private Note note;
+	private NoteEditFragment fragment;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.note_action_container);
+		
+		if (savedInstanceState != null) {
+			// Restore the fragment's instance.
+			fragment = (NoteEditFragment) getFragmentManager().getFragment(
+					savedInstanceState, STATE_NOTE_EDIT_FRAGMENT);
+			note = (Note) savedInstanceState.getSerializable(STATE_NOTE);
+			return;
+		}
 		
 		// Display an up/back arrow for the home action bar button.
 		getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -25,7 +38,7 @@ public class NoteEditActivity extends Activity implements NoteEditListener {
 		// Get the intent that started this activity.
 		Intent intent = getIntent();
 		// Get the Note object from the extras.
-		Note note = (Note)intent.getSerializableExtra(Note.NOTE_BUNDLE_KEY);
+		note = (Note)intent.getSerializableExtra(Note.NOTE_BUNDLE_KEY);
 		if (note != null) {
 			// Get the summary from this Note.
 			String noteSummary = note.getSummaryString();
@@ -40,7 +53,7 @@ public class NoteEditActivity extends Activity implements NoteEditListener {
 		}
 		
 		// Create a NoteEditFragment.
-		NoteEditFragment fragment = new NoteEditFragment();
+		fragment = new NoteEditFragment();
 		Bundle extras = intent.getExtras();
 		// If some extras were added.
 		if (extras != null) {
@@ -64,6 +77,18 @@ public class NoteEditActivity extends Activity implements NoteEditListener {
 	        return true;
 	    }
 	    return super.onOptionsItemSelected(item);
+	}
+	
+	
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		// Save the fragment's instance.
+		getFragmentManager().putFragment(outState, STATE_NOTE_EDIT_FRAGMENT, fragment);
+		// Save the note.
+		outState.putSerializable(STATE_NOTE, note);
+		
+		super.onSaveInstanceState(outState);
 	}
 
 	@Override

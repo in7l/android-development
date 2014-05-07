@@ -43,7 +43,6 @@
     
     <CheckBox
         android:id="@+id/UpdateDatetime"
-        android:visibility="gone"
         android:text="@string/update_note_datetime"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

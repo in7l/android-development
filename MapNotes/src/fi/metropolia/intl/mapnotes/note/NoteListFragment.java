@@ -97,7 +97,10 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.add:
-				mListener.addNote();
+				mListener.addNote(null);
+				break;
+			case R.id.clear_all:
+				mListener.clearAllDatabaseData();
 				break;
 			default:
 				return false;
