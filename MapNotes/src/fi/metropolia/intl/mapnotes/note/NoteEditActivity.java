@@ -44,12 +44,12 @@ public class NoteEditActivity extends Activity implements NoteEditListener {
 			String noteSummary = note.getSummaryString();
 			// If the note summary is not empty, update the activity title.
 			if (noteSummary != "") {
-				setTitle("Edit: " + noteSummary);
+				setTitle(getString(R.string.edit_title) + " "+ noteSummary);
 			}
 		}
 		else {
 			// No Note object passed in the extras.
-			setTitle("Create note.");
+			setTitle(getString(R.string.create_title));
 		}
 		
 		// Create a NoteEditFragment.

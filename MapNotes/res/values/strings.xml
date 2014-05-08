@@ -33,5 +33,7 @@
     <string name="clear_all_title">Clear all database data</string>
     <string name="clear_all_message">Are you sure you want to clear all notes and locations from the database? This cannot be undone.</string>
     <string name="adjust_update_rate">Adjust location update rate</string>
+    <string name="edit_title">Edit:</string>
+    <string name="create_title">Create note</string>
 
 </resources>

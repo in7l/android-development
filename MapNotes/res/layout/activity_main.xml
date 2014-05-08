@@ -8,8 +8,7 @@
         android:id="@+id/UpdateLocationCheckBox"
         android:text="@string/update_location"
         android:layout_height="wrap_content"
-        android:layout_width="match_parent"
-        android:background="@drawable/bottom_and_right_borders" />
+        android:layout_width="match_parent" />
 
     <fragment
         android:id="@+id/NoteListContainer"
