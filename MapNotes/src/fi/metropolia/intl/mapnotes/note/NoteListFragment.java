@@ -27,7 +27,7 @@ import android.widget.TextView;
 import android.widget.AdapterView.OnItemLongClickListener;
 
 public class NoteListFragment extends ListFragment implements OnItemLongClickListener,
-		NoteListActionModeCallbackListener {
+NoteListActionModeCallbackListener {
 	private NoteListListener mListener;
 	private ArrayList<Note> notes = null;
 	private ActionMode.Callback mActionModeCallback = new NoteListActionModeCallback(this);
@@ -41,14 +41,14 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 		
 		// Request from the activity to update the list of notes.
 		mListener.requestNoteListUpdate();
-
+		
 		// Set the background color of the selected item.
 		getListView().setSelector(R.color.Beige);
 		
 		// Register an OnItemLongClickListener for the ListView.
 		getListView().setOnItemLongClickListener(this);
 	}
-
+	
 	@Override
 	public void onAttach(Activity activity) {
 		super.onAttach(activity);
@@ -59,19 +59,19 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 			mListener = (NoteListListener)activity;
 		} catch (ClassCastException e) {
 			throw new ClassCastException(activity.toString()
-					+ " must implement NoteListListener");
+			+ " must implement NoteListListener");
 		}
 	}
-
+	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
+	Bundle savedInstanceState) {
 		// This fragment has an options menu (action bar).
 		setHasOptionsMenu(true);
 		// Inflate the note_list layout used by this fragment and return it.
 		return inflater.inflate(R.layout.note_list, container, false);
 	}
-
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -81,50 +81,50 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 		
 		// Create an adapter for filling in the note elements in the list.
 		noteAdapter = new IdValueAdapter(getActivity(),
-				R.layout.note_collapsed, Note.getNoteListAsIdValueMap(notes));
+		R.layout.note_collapsed, Note.getNoteListAsIdValueMap(notes));
 		setListAdapter(noteAdapter);
 	}
 	
-
+	
 	@Override
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 		inflater.inflate(R.menu.note_list_menu, menu);
 		super.onCreateOptionsMenu(menu, inflater);
 	}
 	
-
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.add:
-				mListener.addNote(null);
-				break;
+			mListener.addNote(null);
+			break;
 			case R.id.clear_all:
-				mListener.clearAllDatabaseData();
-				break;
+			mListener.clearAllDatabaseData();
+			break;
 			default:
-				return false;
+			return false;
 		}
 		
 		return true;
 	}
-
+	
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		// Dismiss the contextual action bar if it was started.
 		if (mActionMode != null) {
 			mActionMode.finish();
 		}
-
+		
 		// Get the position from the pressed item.
 		// Log.i("Note", "Pressed item on position: " + position);
 		
 		mListener.openNote(notes.get(position));
 	}
-
+	
 	@Override
 	public boolean onItemLongClick(AdapterView<?> parent, View view,
-			int position, long id) {
+	int position, long id) {
 		// Log.i("Note", "onLongClick");
 		if (mActionMode != null) {
 			return false;
@@ -133,9 +133,9 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 		// Mark for which item the CAB will be started.
 		actionModeItemIndex = position;
 		// Start the Contextual Action Bar using mActionModeCallback.
-        mActionMode = getActivity().startActionMode(mActionModeCallback);
-        getListView().setItemChecked(position, true);
-        return true;
+		mActionMode = getActivity().startActionMode(mActionModeCallback);
+		getListView().setItemChecked(position, true);
+		return true;
 	}
 	
 	@Override
@@ -152,7 +152,7 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 			mListener.editNote(note);
 		}
 	}
-
+	
 	@Override
 	public void deleteNote() {
 		// This method is called from contextual action mode.
@@ -167,7 +167,7 @@ public class NoteListFragment extends ListFragment implements OnItemLongClickLis
 			mListener.deleteNote(note);
 		}
 	}
-
+	
 	@Override
 	public void destroyActionMode() {
 		mActionMode = null;

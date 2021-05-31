@@ -10,7 +10,7 @@ import android.os.Bundle;
 import android.view.MenuItem;
 
 public class NoteViewActivity extends Activity {
-
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -43,13 +43,13 @@ public class NoteViewActivity extends Activity {
 	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-	    switch (item.getItemId()) {
-	    // Respond to the action bar's Up/Home button
-	    case android.R.id.home:
-	    	// Stop the current activity and go back to the previous one.
-	    	onBackPressed();
-	        return true;
-	    }
-	    return super.onOptionsItemSelected(item);
+		switch (item.getItemId()) {
+			// Respond to the action bar's Up/Home button
+			case android.R.id.home:
+			// Stop the current activity and go back to the previous one.
+			onBackPressed();
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 }
