@@ -4,9 +4,9 @@ This is a custom application created as the final project in an Android developm
 
 The topic was free to choose and course participants had to design and implement an application on their own.
 
-## Google Play Store
+## Google Play
 
-This application was once published to Google Play store but since it has not been updated to work with newer Android versions it has been auto-unpublished since.
+This application was once published to Google Play but, as it has not been updated to work with newer Android versions, it got auto-unpublished at one point.
 
 ## Functionality
 
